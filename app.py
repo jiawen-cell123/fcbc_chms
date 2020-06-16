@@ -5,7 +5,7 @@ from functools import wraps
 
 
 config = {
-  "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
+  "apiKey": "",
   "authDomain": "fcbc-chms.firebaseapp.com",
   "databaseURL": "https://fcbc-chms.firebaseio.com",
   "projectId": "fcbc-chms",
@@ -17,7 +17,7 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 
-API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
+API_KEY = ""
 
 
 

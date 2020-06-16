@@ -3,8 +3,9 @@ import pyrebase
 from telegram import ChatAction
 from functools import wraps
 
+
 config = {
-  "apiKey": "",
+  "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
   "authDomain": "fcbc-chms.firebaseapp.com",
   "databaseURL": "https://fcbc-chms.firebaseio.com",
   "projectId": "fcbc-chms",
@@ -16,7 +17,9 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 
-API_KEY = ""
+API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
+
+
 
 def send_typing_action(func):
     """Sends typing action while processing func command."""
@@ -29,9 +32,52 @@ def send_typing_action(func):
     return command_func
 
 @send_typing_action
-def getinfo (update,context):
+def start(update,context):
+    update.message.reply_text("Welcome to FCBC CHMS Bot"+"\n"+"How can I help you?")
+
+@send_typing_action
+def gpinfo (update,context):
     db = firebase.database()
     result = db.child("glmw").child("pinfo").child("gerald").get()
+    output = ""
+    for i in result.each():
+        print(i.val())
+        output += i.val() + "\n"
+    update.message.reply_text(i.val())
+
+@send_typing_action
+def gestatus(update, context):
+        db = firebase.database()
+        output = {}
+        result = db.child("glmw").child("estatus").child("gerald").get()
+        for i in result.each():
+            output = i.key(), i.val()
+            update.message.reply_text(output)
+
+@send_typing_action
+def jwpinfo (update,context):
+    db = firebase.database()
+    result = db.child("lpj").child("pinfo").child("jiawen").get()
+    output = ""
+    for i in result.each():
+        print(i.val())
+        output += i.val() + "\n"
+    update.message.reply_text(output)
+
+@send_typing_action
+def orlandopinfo (update,context):
+    db = firebase.database()
+    result = db.child("lpj").child("pinfo").child("orlando").get()
+    output = ""
+    for i in result.each():
+        print(i.val())
+        output += i.val() + "\n"
+    update.message.reply_text(output)
+
+@send_typing_action
+def junhaopinfo (update,context):
+    db = firebase.database()
+    result = db.child("lpj").child("pinfo").child("junhao").get()
     output = ""
     for i in result.each():
         print(i.val())
@@ -45,8 +91,19 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    printhello_handler = CommandHandler('get', getinfo)
-    dp.add_handler(printhello_handler)
+    start_handler = CommandHandler('start', start)
+    dp.add_handler(start_handler)
+    glmw_handler = CommandHandler('gerald', gpinfo)
+    dp.add_handler(glmw_handler)
+    lpj_handler = CommandHandler('jiawen', jwpinfo)
+    dp.add_handler(lpj_handler)
+    lpj_handler = CommandHandler('orlando', orlandopinfo)
+    dp.add_handler(lpj_handler)
+    lpj_handler = CommandHandler('junhao', junhaopinfo)
+    dp.add_handler(lpj_handler)
+    glmw_handler = CommandHandler('geraldstatus', gestatus)
+    dp.add_handler(glmw_handler)
+
 
     # Start the Bot
     updater.start_polling()

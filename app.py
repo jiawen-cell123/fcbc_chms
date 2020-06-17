@@ -5,7 +5,7 @@ from functools import wraps
 
 
 config = {
-  "apiKey": "",
+  "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
   "authDomain": "fcbc-chms.firebaseapp.com",
   "databaseURL": "https://fcbc-chms.firebaseio.com",
   "projectId": "fcbc-chms",
@@ -17,7 +17,7 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 
-API_KEY = ""
+API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
 
 
 
@@ -36,14 +36,16 @@ def start(update,context):
     update.message.reply_text("Welcome to FCBC CHMS Bot"+"\n"+"How can I help you?")
 
 @send_typing_action
-def gpinfo (update,context):
+def getpinfo(update, context):
     db = firebase.database()
-    result = db.child("glmw").child("pinfo").child("gerald").get()
+    message = update.message.text
+    name = " ".join(message.split()[1:])
+    result = db.child("glmw").child("pinfo").child(name).get()
     output = ""
     for i in result.each():
-        print(i.val())
-        output += i.val() + "\n"
-    update.message.reply_text(i.val())
+        output += "u\u2022" + i.val() + "\n"
+    update.message.reply_text(output)
+
 
 @send_typing_action
 def gestatus(update, context):
@@ -54,37 +56,6 @@ def gestatus(update, context):
             output = i.key(), i.val()
             update.message.reply_text(output)
 
-@send_typing_action
-def jwpinfo (update,context):
-    db = firebase.database()
-    result = db.child("lpj").child("pinfo").child("jiawen").get()
-    output = ""
-    for i in result.each():
-        print(i.val())
-        output += i.val() + "\n"
-    update.message.reply_text(output)
-
-@send_typing_action
-def orlandopinfo (update,context):
-    db = firebase.database()
-    result = db.child("lpj").child("pinfo").child("orlando").get()
-    output = ""
-    for i in result.each():
-        print(i.val())
-        output += i.val() + "\n"
-    update.message.reply_text(output)
-
-@send_typing_action
-def junhaopinfo (update,context):
-    db = firebase.database()
-    result = db.child("lpj").child("pinfo").child("junhao").get()
-    output = ""
-    for i in result.each():
-        print(i.val())
-        output += i.val() + "\n"
-    update.message.reply_text(output)
-
-
 def main():
     updater = Updater(API_KEY, use_context=True)
 
@@ -93,14 +64,9 @@ def main():
 
     start_handler = CommandHandler('start', start)
     dp.add_handler(start_handler)
-    glmw_handler = CommandHandler('gerald', gpinfo)
-    dp.add_handler(glmw_handler)
-    lpj_handler = CommandHandler('jiawen', jwpinfo)
-    dp.add_handler(lpj_handler)
-    lpj_handler = CommandHandler('orlando', orlandopinfo)
-    dp.add_handler(lpj_handler)
-    lpj_handler = CommandHandler('junhao', junhaopinfo)
-    dp.add_handler(lpj_handler)
+
+    dp.add_handler(CommandHandler('getpinfo', getpinfo))
+
     glmw_handler = CommandHandler('geraldstatus', gestatus)
     dp.add_handler(glmw_handler)
 
@@ -115,4 +81,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # x = "/getpinfo meng wee"
+    # print(" ".join(x.split()[1:]))
+    # print(x.split(" ",1)[1])
+
+
 

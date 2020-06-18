@@ -33,7 +33,7 @@ def send_typing_action(func):
 
 @send_typing_action
 def start(update,context):
-    update.message.reply_text("Welcome to FCBC CHMS Bot"+"\n"+"How can I help you?")
+    update.message.reply_text("Welcome to FCBC CHMS Bot"+"\n"+"How can I help you ?")
 
 @send_typing_action
 def getpinfo(update, context):
@@ -48,13 +48,21 @@ def getpinfo(update, context):
 
 
 @send_typing_action
-def gestatus(update, context):
-        db = firebase.database()
-        output = {}
-        result = db.child("glmw").child("estatus").child("gerald").get()
-        for i in result.each():
-            output = i.key(), i.val()
-            update.message.reply_text(output)
+def estatus(update, context):
+    db = firebase.database()
+    message = update.message.text
+    nric = message.split()[1]
+    name = db.child("chms").child("812E06111995").child(nric).child("pinfo").child("name").get()
+    equipping = db.child("chms").child("812E06111995").child(nric).child("estatus").get()
+    output = ""
+    for i in equipping.each():
+        output = name.val(), i.key(), i.val()
+        print(output)
+        update.message.reply_text(output)
+    # print(output)
+    # print(output)
+    # update.message.reply_text(output)
+
 
 def main():
     updater = Updater(API_KEY, use_context=True)
@@ -62,13 +70,9 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    start_handler = CommandHandler('start', start)
-    dp.add_handler(start_handler)
-
+    dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('getpinfo', getpinfo))
-
-    glmw_handler = CommandHandler('geraldstatus', gestatus)
-    dp.add_handler(glmw_handler)
+    dp.add_handler(CommandHandler('estatus', estatus))
 
 
     # Start the Bot
@@ -78,12 +82,15 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-
+#
 if __name__ == '__main__':
     main()
-    # x = "/getpinfo meng wee"
-    # print(" ".join(x.split()[1:]))
-    # print(x.split(" ",1)[1])
+
+#
+# x = "/estatus 38G"
+# message = x.split()[0]
+# print(message)
+
 
 
 

@@ -69,10 +69,11 @@ def getpinfo(update, context):
 def estatus(update, context):
     db = firebase.database()
     message = update.message.text
-    nric = message.split()[1]
+    id = message.split()[1]
+    nric = message.split()[2]
     final_output = " "
-    name = db.child("chms").child().child(nric.upper()).child("pinfo").child("name").get()
-    equipping = db.child("chms").child("812E06111995").child(nric.upper()).child("estatus").get()
+    name = db.child("chms").child(id.upper()).child(nric.upper()).child("pinfo").child("name").get()
+    equipping = db.child("chms").child(id.upper()).child(nric.upper()).child("estatus").get()
     final_output += name.val() + "\n\n"
     for items in equipping.each():
         title = items.val()["title"]
@@ -110,12 +111,12 @@ def main():
 if __name__ == '__main__':
     main()
 
-    #
     # db = firebase.database()
-    # nric = "812e"
+    # nric = "143g"
+    # id = "572C03061996"
     # final_output = " "
-    # name = db.child("chms").child("812E06111995").child(nric.upper()).child("pinfo").child("name").get()
-    # equipping = db.child("chms").child("812E06111995").child(nric.upper()).child("estatus").get()
+    # name = db.child("chms").child(id.upper()).child(nric.upper()).child("pinfo").child("name").get()
+    # equipping = db.child("chms").child(id.upper()).child(nric.upper()).child("estatus").get()
     # print(name.val())
     # for items in equipping.each():
     #     title = items.val()["title"]

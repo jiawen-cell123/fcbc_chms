@@ -63,12 +63,14 @@ def loginChms(update, context):
 def getpinfo(update, context):
     db = firebase.database()
     message = update.message.text
-    name = " ".join(message.split()[1:])
-    result = db.child("glmw").child("pinfo").child(name).get()
-    output = ""
-    for i in result.each():
-        output += "\u2022" + i.val() + "\n"
-    update.message.reply_text(output)
+    nric = " ".join(message.split()[1:]).upper()
+    result = db.child("chms").child("812E06111995").child(nric).child("pinfo").get()
+    if result.val():
+        output = ""
+        output = (result.each())[2].val() + "\n" + "\u2022 " + (result.each())[1].val() + "\n" + "\u2022 " + (result.each())[0].val()
+        update.message.reply_text(output)
+    else:
+        update.message.reply_text("You have entered an invalid IC number")
 
 
 @send_typing_action

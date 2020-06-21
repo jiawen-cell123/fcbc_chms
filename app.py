@@ -2,6 +2,10 @@ from telegram.ext import Updater, CommandHandler, Filters
 import pyrebase
 from telegram import ChatAction
 from functools import wraps
+import requests
+from bs4 import BeautifulSoup
+import os
+import requests
 
 
 config = {
@@ -37,6 +41,7 @@ def start(update,context):
 
 @send_typing_action
 def loginChms(update, context):
+    # /loginChms 812E06111995
     db = firebase.database()
     message  = update.message.text
     key = " ".join(message.split()[1:])
@@ -45,6 +50,7 @@ def loginChms(update, context):
     found_id = False
     for i in result.each():
         if key == i.key():
+            # {key: value}
             context.user_data["teamId"] = key
             found_id = True
             break
@@ -67,13 +73,16 @@ def getpinfo(update, context):
 
 @send_typing_action
 def estatus(update, context):
+    # estatus 0812E
+    teamId = context.user_data['teamId']
+
     db = firebase.database()
     message = update.message.text
     id = message.split()[1]
     nric = message.split()[2]
     final_output = " "
-    name = db.child("chms").child(id.upper()).child(nric.upper()).child("pinfo").child("name").get()
-    equipping = db.child("chms").child(id.upper()).child(nric.upper()).child("estatus").get()
+    name = db.child("chms").child(teamId).child(nric.upper()).child("pinfo").child("name").get()
+    equipping = db.child("chms").child(teamId).child(nric.upper()).child("estatus").get()
     final_output += name.val() + "\n\n"
     for items in equipping.each():
         title = items.val()["title"]
@@ -87,6 +96,13 @@ def estatus(update, context):
     update.message.reply_text(final_output)
 
 
+@send_typing_action
+def thoughtOfTheWeek(update, context):
+    print("totw")
+
+@send_typing_action
+def verseOfTheDay(update, context):
+    print("votd")
 
 def main():
     updater = Updater(API_KEY, use_context=True)
@@ -98,7 +114,8 @@ def main():
     dp.add_handler(CommandHandler('getpinfo', getpinfo))
     dp.add_handler(CommandHandler('estatus', estatus))
     dp.add_handler((CommandHandler('login', loginChms)))
-
+    dp.add_handler((CommandHandler('totw', thoughtOfTheWeek)))
+    dp.add_handler((CommandHandler('votd', verseOfTheDay)))
 
     # Start the Bot
     updater.start_polling()
@@ -109,23 +126,35 @@ def main():
     updater.idle()
 #
 if __name__ == '__main__':
-    main()
+    # main()
+
+    # page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
+    # soup = BeautifulSoup(page.content, 'html.parser')
+    # print(soup.prettify())
+    # print(soup.find_all('h1')[0].get_text())
+    # print(soup.find_all(match_class(["field-content"])))
 
     # db = firebase.database()
-    # nric = "143g"
-    # id = "572C03061996"
-    # final_output = " "
-    # name = db.child("chms").child(id.upper()).child(nric.upper()).child("pinfo").child("name").get()
-    # equipping = db.child("chms").child(id.upper()).child(nric.upper()).child("estatus").get()
-    # print(name.val())
-    # for items in equipping.each():
-    #     title = items.val()["title"]
-    #     date = items.val()["date"]
-    #     if "attendance" not in items.val():
-    #         attendance = ""
-    #     else:
-    #         attendance = items.val()["attendance"]
-    #     final_output = title + date + attendance
-    #     print(final_output)
+    # name = db.child("chms").child("812E06111995").child("324G").child("pinfo").child("name").get()
+    # if (name.val() == None):
+    #     print("user doesnt exist")
 
-    # print(final_output)
+
+    # Assuming you keep your tokens in environment variables:
+    # YOUVERSION_DEVELOPER_TOKEN = os.environ["morm_UDvP5k-ZR24Ak45D7-mKRY"]
+
+    headers = {
+        "accept": "application/json",
+        "x-youversion-developer-token": "morm_UDvP5k-ZR24Ak45D7-mKRY",
+        "accept-language": "en",
+    }
+
+    response = requests.get(
+        "https://developers.youversionapi.com/1.0/versions",
+        headers=headers
+    )
+
+    print(response.content)
+
+
+

@@ -76,26 +76,33 @@ def getpinfo(update, context):
 @send_typing_action
 def estatus(update, context):
     # estatus 0812E
-    teamId = context.user_data['teamId']
-
     db = firebase.database()
+    teamId = context.user_data['teamId']
+    results = db.child("chms").child(teamId).get()
     message = update.message.text
-    id = message.split()[1]
-    nric = message.split()[2]
-    final_output = " "
-    name = db.child("chms").child(teamId).child(nric.upper()).child("pinfo").child("name").get()
-    equipping = db.child("chms").child(teamId).child(nric.upper()).child("estatus").get()
-    final_output += name.val() + "\n\n"
-    for items in equipping.each():
-        title = items.val()["title"]
-        date = items.val()["date"]
-        if "attendance" not in items.val():
-            attendance = "NA"
-        else:
-            attendance = items.val()["attendance"]
-        final_output += title + "\n\u2022" + date + "\n\u2022" + attendance + "\n\n"
-    print(final_output)
-    update.message.reply_text(final_output)
+    nric = message.split()[1].upper()
+    found_nric = False
+    for keys in results.each():
+            if nric == keys.key():
+                final_output = " "
+                name = db.child("chms").child(teamId).child(nric).child("pinfo").child("name").get()
+                equipping = db.child("chms").child(teamId).child(nric).child("estatus").get()
+                final_output += name.val() + "\n\n"
+                for items in equipping.each():
+                    title = items.val()["title"]
+                    date = items.val()["date"]
+                    if "attendance" not in items.val():
+                        attendance = "NA"
+                    else:
+                        attendance = items.val()["attendance"]
+                    final_output += title + "\n\u2022" + date + "\n\u2022" + attendance + "\n\n"
+                found_nric = True
+                break
+
+    if found_nric:
+        update.message.reply_text(final_output)
+    else:
+        update.message.reply_text("Kindly check the last 4 digits of your NRIC entered")
 
 
 @send_typing_action
@@ -128,7 +135,11 @@ def main():
     updater.idle()
 #
 if __name__ == '__main__':
-    # main()
+    main()
+
+
+
+
 
     # page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
     # soup = BeautifulSoup(page.content, 'html.parser')
@@ -144,19 +155,19 @@ if __name__ == '__main__':
 
     # Assuming you keep your tokens in environment variables:
     # YOUVERSION_DEVELOPER_TOKEN = os.environ["morm_UDvP5k-ZR24Ak45D7-mKRY"]
-
-    headers = {
-        "accept": "application/json",
-        "x-youversion-developer-token": "morm_UDvP5k-ZR24Ak45D7-mKRY",
-        "accept-language": "en",
-    }
-
-    response = requests.get(
-        "https://developers.youversionapi.com/1.0/versions",
-        headers=headers
-    )
-
-    print(response.content)
-
-
+    #
+    # headers = {
+    #     "accept": "application/json",
+    #     "x-youversion-developer-token": "morm_UDvP5k-ZR24Ak45D7-mKRY",
+    #     "accept-language": "en",
+    # }
+    #
+    # response = requests.get(
+    #     "https://developers.youversionapi.com/1.0/versions",
+    #     headers=headers
+    # )
+    #
+    # print(response.content)
+    #
+    #
 

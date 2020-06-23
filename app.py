@@ -76,11 +76,11 @@ def estatus(update, context):
     # estatus 0812E
     db = firebase.database()
     teamId = context.user_data['teamId']
-    results = db.child("chms").child(teamId).get()
+    list_of_nric = db.child("chms").child(teamId).get()
     message = update.message.text
     nric = message.split()[1].upper()
     found_nric = False
-    for keys in results.each():
+    for keys in list_of_nric.each():
             if nric == keys.key():
                 final_output = " "
                 name = db.child("chms").child(teamId).child(nric).child("pinfo").child("name").get()
@@ -100,12 +100,19 @@ def estatus(update, context):
     if found_nric:
         update.message.reply_text(final_output)
     else:
-        update.message.reply_text("Kindly check the last 4 digits of your NRIC entered")
+        update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC !!")
 
 
 @send_typing_action
 def thoughtOfTheWeek(update, context):
-    print("totw")
+    page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    header = soup.find_all('h1')[0].get_text()
+    for hit in soup.findAll(class_="views-field views-field-body"):
+        output = ""
+    output = header + "\n" + hit.text
+    update.message.reply_text(output)
+
 
 @send_typing_action
 def verseOfTheDay(update, context):
@@ -134,21 +141,6 @@ def main():
 #
 if __name__ == '__main__':
     main()
-
-
-
-
-
-    # page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
-    # soup = BeautifulSoup(page.content, 'html.parser')
-    # print(soup.prettify())
-    # print(soup.find_all('h1')[0].get_text())
-    # print(soup.find_all(match_class(["field-content"])))
-
-    # db = firebase.database()
-    # name = db.child("chms").child("812E06111995").child("324G").child("pinfo").child("name").get()
-    # if (name.val() == None):
-    #     print("user doesnt exist")
 
 
     # Assuming you keep your tokens in environment variables:

@@ -1,10 +1,9 @@
+import telegram
 from telegram.ext import Updater, CommandHandler, Filters
 import pyrebase
 from telegram import ChatAction
 from functools import wraps
-import requests
 from bs4 import BeautifulSoup
-import os
 import requests
 
 
@@ -22,6 +21,7 @@ config = {
 firebase = pyrebase.initialize_app(config)
 
 API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
+bot = telegram.Bot(token = '1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY')
 
 
 
@@ -70,7 +70,6 @@ def getpinfo(update, context):
         output += "\u2022" + i.val() + "\n"
     update.message.reply_text(output)
 
-
 @send_typing_action
 def estatus(update, context):
     # estatus 0812E
@@ -110,7 +109,9 @@ def thoughtOfTheWeek(update, context):
     header = soup.find_all('h1')[0].get_text()
     for hit in soup.findAll(class_="views-field views-field-body"):
         output = ""
-    output = header + "\n" + hit.text
+        output = header + "\n" + hit.text
+    bot.send_photo(chat_id=update.message.chat_id, photo= "fcbc.org.sg/sites/default/files/extremedisciple_eng.jpg")
+    #must update.message.chat_id
     update.message.reply_text(output)
 
 
@@ -141,9 +142,14 @@ def main():
 #
 if __name__ == '__main__':
     main()
+#
+# page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
+# soup = BeautifulSoup(page.content, 'html.parser')
+# everything = soup.find(class_="field-content")
+# img = everything.find('img')
+# print(img)
 
-
-    # Assuming you keep your tokens in environment variables:
+# Assuming you keep your tokens in environment variables:
     # YOUVERSION_DEVELOPER_TOKEN = os.environ["morm_UDvP5k-ZR24Ak45D7-mKRY"]
     #
     # headers = {

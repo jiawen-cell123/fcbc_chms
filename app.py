@@ -110,6 +110,7 @@ def thoughtOfTheWeek(update, context):
     soup = BeautifulSoup(page.content, 'html.parser')
     header = soup.find_all('h1')[0].get_text()
     image = soup.find_all("img")
+    name = ""
     for hit in soup.findAll(class_="views-field views-field-body"):
         output = ""
         output = header + "\n" + hit.text

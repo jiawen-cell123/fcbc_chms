@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import requests
 
 
+
 config = {
   "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
   "authDomain": "fcbc-chms.firebaseapp.com",
@@ -36,7 +37,8 @@ def send_typing_action(func):
     return command_func
 
 @send_typing_action
-def start(update,context):
+def start(update, context):
+    bot.send_photo(chat_id=update.message.chat_id, photo="https://fcbc.org.sg/sites/default/files/fcbc_logo.jpg")
     update.message.reply_text("Welcome to FCBC CHMS Bot"+"\n"+"How can I help you ?")
 
 @send_typing_action
@@ -107,11 +109,20 @@ def thoughtOfTheWeek(update, context):
     page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
     soup = BeautifulSoup(page.content, 'html.parser')
     header = soup.find_all('h1')[0].get_text()
+    image = soup.find_all("img")
     for hit in soup.findAll(class_="views-field views-field-body"):
         output = ""
         output = header + "\n" + hit.text
-    bot.send_photo(chat_id=update.message.chat_id, photo= "fcbc.org.sg/sites/default/files/extremedisciple_eng.jpg")
-    #must update.message.chat_id
+    for i in image:
+        src = i["src"]
+        if "jpg" in src:
+            name = src
+    # get the source of the image
+    url = "fcbc.org.sg" + name
+    #combing fcbc.org.sg to source of the image
+    print(output)
+    bot.send_photo(chat_id=update.message.chat_id, photo=url)
+    #must use update.message.chat_id to send picture using telegram bot
     update.message.reply_text(output)
 
 
@@ -142,12 +153,7 @@ def main():
 #
 if __name__ == '__main__':
     main()
-#
-# page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
-# soup = BeautifulSoup(page.content, 'html.parser')
-# everything = soup.find(class_="field-content")
-# img = everything.find('img')
-# print(img)
+
 
 # Assuming you keep your tokens in environment variables:
     # YOUVERSION_DEVELOPER_TOKEN = os.environ["morm_UDvP5k-ZR24Ak45D7-mKRY"]

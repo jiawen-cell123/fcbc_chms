@@ -122,6 +122,7 @@ def thoughtOfTheWeek(update, context):
     #combining fcbc.org.sg to source of the image
     print(output)
     bot.send_photo(chat_id=update.message.chat_id, photo=url)
+    update.message.reply_text(output)
     #must use update.message.chat_id to send picture using telegram bot
 
 

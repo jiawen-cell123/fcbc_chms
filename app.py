@@ -38,8 +38,7 @@ def send_typing_action(func):
 
 @send_typing_action
 def start(update, context):
-    bot.send_photo(chat_id=update.message.chat_id, photo="https://fcbc.org.sg/sites/default/files/fcbc_logo.jpg")
-    update.message.reply_text("Welcome to FCBC CHMS Bot"+"\n"+"How can I help you ?")
+    bot.send_photo(chat_id=update.message.chat_id, photo="https://fcbc.org.sg/sites/default/files/fcbc_logo.jpg",caption="Welcome to FCBC CHMS Bot"+"\n"+"How can I help you ?" )
 
 @send_typing_action
 def loginChms(update, context):
@@ -124,7 +123,6 @@ def thoughtOfTheWeek(update, context):
     print(output)
     bot.send_photo(chat_id=update.message.chat_id, photo=url)
     #must use update.message.chat_id to send picture using telegram bot
-    update.message.reply_text(output)
 
 
 @send_typing_action

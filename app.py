@@ -1,11 +1,11 @@
 import telegram
-from telegram.ext import Updater, CommandHandler, Filters
+from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
 import pyrebase
 from telegram import ChatAction
 from functools import wraps
 from bs4 import BeautifulSoup
 import requests
-
+from uuid import uuid4
 
 
 config = {
@@ -130,6 +130,67 @@ def thoughtOfTheWeek(update, context):
 def verseOfTheDay(update, context):
     print("votd")
 
+@send_typing_action
+def getTopSongs(update, context):
+    message = update.message.text
+    query = message.split()[1]
+    # clear chat lyrics data
+    context.chat_data['lyrics_data'] = {}
+    # query = 'marry'
+    search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query), headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(search_page.content, 'html.parser')
+    top_tracks = soup.find_all(class_="showArtist showCoverart", limit = 5)
+    output_top_tracks = ""
+    for track in top_tracks:
+        title = track.find("a", class_="title").get_text()
+        artist = track.find("a", class_="artist").get_text()
+        href = track.find("a", href=True)['href']
+        # print(href)
+        uuid = str(uuid4()).upper()[:4]
+        output_top_tracks = output_top_tracks + title + "\n" + artist + "\n" + "/lyric3" + uuid  + "\n\n"
+        # store in temp db
+        context.chat_data['lyrics_data']["lyric3" + uuid] = {'title': title, 'artist': artist, 'href': href}
+    # print(output_top_tracks)
+    update.message.reply_text(output_top_tracks)
+
+@send_typing_action
+def getSongLyrics():
+    message = update.message.text
+    query = message.split()[1]
+    # query = 'ride'
+    search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
+                               headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(search_page.content, 'html.parser')
+    best_result = soup.find(class_="showArtist showCoverart")
+    song_title = best_result.find("a", class_="title").get_text()
+    song_artist = best_result.find("a", class_="artist").get_text()
+    song_href = best_result.find("a", href=True)['href']
+    # print(href)
+    lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_href), headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(lyrics_page.content, 'html.parser')
+    lyrics_content = soup.find_all(class_="mxm-lyrics__content")
+    lyrics_output = "{} by {}\n\n".format(song_title, song_artist)
+    for lyrics in lyrics_content:
+        lyrics_output = lyrics_output + lyrics.get_text() + "\n"
+    update.message.reply_text(lyrics_output)
+    # print(lyrics_output)
+
+@send_typing_action
+def scrapeLyrics(update, context):
+    print('here')
+    message = update.message.text
+    query = message[1:]
+    print(query)
+    song_info = context.chat_data['lyrics_data'].get(query, False)
+    print(song_info)
+    lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_info['href']), headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(lyrics_page.content, 'html.parser')
+    lyrics_content = soup.find_all(class_="mxm-lyrics__content")
+    lyrics_output = "{} by {}\n\n".format(song_info['title'], song_info['artist'])
+    for lyrics in lyrics_content:
+        lyrics_output = lyrics_output + lyrics.get_text() + "\n"
+    update.message.reply_text(lyrics_output)
+
 def main():
     updater = Updater(API_KEY, use_context=True)
 
@@ -142,7 +203,9 @@ def main():
     dp.add_handler((CommandHandler('login', loginChms)))
     dp.add_handler((CommandHandler('totw', thoughtOfTheWeek)))
     dp.add_handler((CommandHandler('votd', verseOfTheDay)))
-
+    dp.add_handler((CommandHandler('charts', getTopSongs)))
+    dp.add_handler((CommandHandler('lyrics', getSongLyrics)))
+    dp.add_handler((MessageHandler(Filters.regex('lyric3.+'), scrapeLyrics)))
     # Start the Bot
     updater.start_polling()
 
@@ -150,10 +213,15 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-#
+
 if __name__ == '__main__':
     main()
 
+    # page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
+    # soup = BeautifulSoup(page.content, 'html.parser')
+    # everything = soup.find(class_="field-content")
+    # img = everything.find('img')
+    # print(img)
 
 # Assuming you keep your tokens in environment variables:
     # YOUVERSION_DEVELOPER_TOKEN = os.environ["morm_UDvP5k-ZR24Ak45D7-mKRY"]
@@ -172,4 +240,10 @@ if __name__ == '__main__':
     # print(response.content)
     #
     #
+
+    # bible_verse = "John 3:16-17"
+    # z = re.search(('([\w]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)'), bible_verse)
+    # getSongLyrics()
+
+
 

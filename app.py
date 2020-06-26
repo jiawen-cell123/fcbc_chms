@@ -197,7 +197,7 @@ def getBibleVerses(update, context):
     message = update.message.text
     query = message.split(" ", 1)[1]
     print(query)
-    scriptures = list(re.findall(('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)'), query)[0])
+    scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])
     scriptures = list(filter(lambda a: a != '', scriptures))
     book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
     bible_query = ""
@@ -246,6 +246,17 @@ def additional_output(style):
     if style == 'q2':
         return '\n'
 
+@send_typing_action
+def get4ws(update, context):
+    page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    pdfs = soup.find(class_="views-field views-field-field-pdfs")
+    href = pdfs.find('a', href=True)['href']
+    print(href)
+    # document = open(href, 'rb')
+    bot.sendDocument(chat_id=update.message.chat_id, document=href)
+
+
 def main():
     updater = Updater(API_KEY, use_context=True)
 
@@ -262,6 +273,7 @@ def main():
     dp.add_handler((CommandHandler('lyrics', getSongLyrics)))
     dp.add_handler((MessageHandler(Filters.regex('lyric3.+'), scrapeLyrics)))
     dp.add_handler((CommandHandler('get', getBibleVerses)))
+    dp.add_handler((CommandHandler('4ws', get4ws)))
     # Start the Bot
     updater.start_polling()
 
@@ -271,7 +283,7 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
-    # main()
+    main()
 
     # page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
     # soup = BeautifulSoup(page.content, 'html.parser')
@@ -313,32 +325,38 @@ if __name__ == '__main__':
     #     bible_query = "{}.{}".format(book_id, scriptures[1])
     # print(bible_query)
 
-    bible_query = 'PSA.5'
-    response = requests.get(
-        'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/{}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false&use-org-id=false'.format(bible_query),
-        headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'},
-    )
+    # bible_query = 'PSA.5'
+    # response = requests.get(
+    #     'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/{}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false&use-org-id=false'.format(bible_query),
+    #     headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'},
+    # )
+    #
+    # json_response = response.json()
+    # contents = json_response['data']['content']
+    # content_output = ""
+    # for content in contents:
+    #     if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs']['style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd':
+    #         content_output += content['items'][0]['text'] + "\n\n"
+    #     elif content['attrs']['style'] == 'b':
+    #         content_output += "\n\n"
+    #     elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
+    #         for item in content['items']:
+    #             if 'style' in item['attrs'] :
+    #                 if item['attrs']['style'] == 'v':
+    #                     content_output += item['attrs']['number']
+    #                 elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
+    #                     content_output += item['items'][0]['text']
+    #             elif 'text' in item:
+    #                 content_output += item['text']
+    #         content_output += additional_output(content['attrs']['style'])
+    #
+    # print(content_output)
 
-    json_response = response.json()
-    contents = json_response['data']['content']
-    content_output = ""
-    for content in contents:
-        if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs']['style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd':
-            content_output += content['items'][0]['text'] + "\n\n"
-        elif content['attrs']['style'] == 'b':
-            content_output += "\n\n"
-        elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
-            for item in content['items']:
-                if 'style' in item['attrs'] :
-                    if item['attrs']['style'] == 'v':
-                        content_output += item['attrs']['number']
-                    elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
-                        content_output += item['items'][0]['text']
-                elif 'text' in item:
-                    content_output += item['text']
-            content_output += additional_output(content['attrs']['style'])
+    page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    pdfs = soup.find(class_="views-field views-field-field-pdfs")
+    print(pdfs.find('a', href=True)['href'])
 
-    print(content_output)
 
 
 

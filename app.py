@@ -130,7 +130,23 @@ def thoughtOfTheWeek(update, context):
 
 @send_typing_action
 def verseOfTheDay(update, context):
-    print("votd")
+    response = requests.get(
+        'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/JHN.3?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false&use-org-id=false',
+        headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
+    json_response = response.json()
+    contents = json_response["data"]["content"]
+    verse_output = ""
+    for content in contents:
+        for i in content["items"]:
+            if content['attrs']['style'] == 's1':
+                verse_output += "\n" + content['items'][0]['text'] + "\n"
+            elif "text" in i:
+                if "attrs" in i:
+                    verse_output += i["text"] + "\n"
+
+    print(verse_output)
+    update.message.reply_text(verse_output)
+
 
 @send_typing_action
 def getTopSongs(update, context):
@@ -156,7 +172,7 @@ def getTopSongs(update, context):
     update.message.reply_text(output_top_tracks)
 
 @send_typing_action
-def getSongLyrics():
+def getSongLyrics(update):
     message = update.message.text
     query = message.split()[1]
     # query = 'ride'
@@ -285,29 +301,10 @@ def main():
 if __name__ == '__main__':
     main()
 
-    # page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
-    # soup = BeautifulSoup(page.content, 'html.parser')
-    # everything = soup.find(class_="field-content")
-    # img = everything.find('img')
-    # print(img)
 
-# Assuming you keep your tokens in environment variables:
-    # YOUVERSION_DEVELOPER_TOKEN = os.environ["morm_UDvP5k-ZR24Ak45D7-mKRY"]
-    #
-    # headers = {
-    #     "accept": "application/json",
-    #     "x-youversion-developer-token": "morm_UDvP5k-ZR24Ak45D7-mKRY",
-    #     "accept-language": "en",
-    # }
-    #
-    # response = requests.get(
-    #     "https://developers.youversionapi.com/1.0/versions",
-    #     headers=headers
-    # )
-    #
-    # print(response.content)
-    #
-    #
+
+
+
 
     # bible_verse = "psalms 5"
     # scriptures = list(re.findall(('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)'), bible_verse)[0])
@@ -352,14 +349,45 @@ if __name__ == '__main__':
     #
     # print(content_output)
 
-    page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
-    soup = BeautifulSoup(page.content, 'html.parser')
-    pdfs = soup.find(class_="views-field views-field-field-pdfs")
-    print(pdfs.find('a', href=True)['href'])
+    # page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
+    # soup = BeautifulSoup(page.content, 'html.parser')
+    # pdfs = soup.find(class_="views-field views-field-field-pdfs")
+    # print(pdfs.find('a', href=True)['href'])
+
+# response = requests.get(
+#         'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/JHN.3?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse-numbers=true&include-verse-spans=false&use-org-id=false',
+#         headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
+# json_response = response.json()
+# contents = json_response["data"]["content"]
+# verse_output = ""
+# for content in contents:
+#     for i in content["items"]:
+#         if content['attrs']['style'] == 's1':
+#             verse_output += "\n" + content['items'][0]['text'] + "\n"
+#         elif "text" in i:
+#              if "attrs" in i:
+#                 verse_output += i["text"] + "\n"
+#
+# print(verse_output)
 
 
 
 
 
+
+
+
+    # elif content['attrs']['style'] == 'b':
+    #     content_output += "\n\n"
+    # elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
+    #     for item in content['items']:
+    #         if 'style' in item['attrs']:
+    #             if item['attrs']['style'] == 'v':
+    #                 content_output += item['attrs']['number']
+    #             elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
+    #                 content_output += item['items'][0]['text']
+    #         elif 'text' in item:
+    #             content_output += item['text']
+    #     content_output += additional_output(content['attrs']['style'])
 
 

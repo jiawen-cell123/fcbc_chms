@@ -137,11 +137,19 @@ def verseOfTheDay(update, context):
     contents = json_response["data"]["content"]
     verse_output = ""
     for content in contents:
+        if content['attrs']['style'] == 's1':
+            verse_output += "\n" + content['items'][0]['text']
+        elif content['attrs']['style'] == 'p':
+            verse_output += "\n\n"
         for i in content["items"]:
-            if content['attrs']['style'] == 's1':
-                verse_output += "\n" + content['items'][0]['text'] + "\n"
-            elif "text" in i:
-                if "attrs" in i:
+            if "attrs" in i:
+                if "style" in i["attrs"]:
+                    if i["attrs"]["style"] == "v":
+                        verse_output += i["attrs"]["number"]
+                    elif i["attrs"]["style"] == "wj":
+                        verse_output += i['items'][0]['text']
+            if "attrs" in i:
+                if "text" in i:
                     verse_output += i["text"] + "\n"
 
     print(verse_output)
@@ -300,7 +308,7 @@ def main():
 
 if __name__ == '__main__':
     main()
-
+#
 
 
 
@@ -361,18 +369,44 @@ if __name__ == '__main__':
 # contents = json_response["data"]["content"]
 # verse_output = ""
 # for content in contents:
-#     for i in content["items"]:
 #         if content['attrs']['style'] == 's1':
 #             verse_output += "\n" + content['items'][0]['text'] + "\n"
-#         elif "text" in i:
-#              if "attrs" in i:
-#                 verse_output += i["text"] + "\n"
+#         elif content['attrs']['style'] == 'p':
+#             verse_output += "\n\n"
+#         for i in content["items"]:
+#             if "attrs" in i:
+#                 if "style" in i["attrs"]:
+#                     if i["attrs"]["style"] == "v":
+#                         verse_output += i["attrs"]["number"]
+#                     elif i["attrs"]["style"] == "wj":
+#                         verse_output += i['items'][0]['text']
+#             if "attrs" in i:
+#                 if "text" in i:
+#                     verse_output += i["text"]
+
+print(verse_output)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #
 # print(verse_output)
-
-
-
-
+#
+#        elif "text" in i:
+#             if "attrs" in i:
+#                 verse_output += i["text"] + "\n"
 
 
 

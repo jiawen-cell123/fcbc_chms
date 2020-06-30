@@ -205,9 +205,10 @@ def getTopSongs(update, context):
     update.message.reply_text(output_top_tracks)
 
 @send_typing_action
-def getSongLyrics(update):
+def getSongLyrics(update, context):
     message = update.message.text
     query = message.split()[1]
+    print(query)
     # query = 'ride'
     search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
                                headers={"User-Agent": "Mozilla/5.0"})
@@ -308,3 +309,22 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # query = 'oceans'
+    # search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
+    #                            headers={"User-Agent": "Mozilla/5.0"})
+    # soup = BeautifulSoup(search_page.content, 'html.parser')
+    # best_result = soup.find(class_="showArtist showCoverart")
+    # song_title = best_result.find("a", class_="title").get_text()
+    # song_artist = best_result.find("a", class_="artist").get_text()
+    # song_href = best_result.find("a", href=True)['href']
+    # # print(href)
+    # lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_href), headers={"User-Agent": "Mozilla/5.0"})
+    # soup = BeautifulSoup(lyrics_page.content, 'html.parser')
+    # lyrics_content = soup.find_all(class_="mxm-lyrics__content")
+    # lyrics_output = "{} by {}\n\n".format(song_title, song_artist)
+    # for lyrics in lyrics_content:
+    #     lyrics_output = lyrics_output + lyrics.get_text() + "\n"
+    # print(lyrics_output)
+
+

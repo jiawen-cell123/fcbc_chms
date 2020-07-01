@@ -131,23 +131,15 @@ def thoughtOfTheWeek(update, context):
 
 @send_typing_action
 def verseOfTheDay(update, context):
-    YOUVERSION_DEVELOPER_TOKEN = 'morm_UDvP5k-ZR24Ak45D7-mKRY'
-
-    headers = {
-        "accept": "application/json",
-        "x-youversion-developer-token": YOUVERSION_DEVELOPER_TOKEN,
-        "accept-language": "en",
-    }
-
-    response = requests.get(
-        "https://developers.youversionapi.com/1.0/verse_of_the_day/1?version_id=1",
-        headers=headers
-    )
-    result = response.content.decode('utf-8')
-    result_json = json.loads(result)
-    query = (result_json['verse']['usfms'][0])
-
-    verse_output = apiBible(query)
+    page = requests.get("https://www.bible.com/verse-of-the-day")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    verse = soup.find_all(class_="verse-wrapper ml1 mr1 mt4 mb4")
+    verse_output = ""
+    for i in verse:
+        header = soup.find("p", class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text()
+        text = soup.find("p", class_="near-black mt0 mb2").get_text()
+    verse_output = "Verse of the Day" + "\n\n" + header + "\n\n" + text
+    print(verse_output)
     update.message.reply_text(verse_output)
 
 def apiBible(query):
@@ -326,5 +318,6 @@ if __name__ == '__main__':
     # for lyrics in lyrics_content:
     #     lyrics_output = lyrics_output + lyrics.get_text() + "\n"
     # print(lyrics_output)
+
 
 

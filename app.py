@@ -155,11 +155,11 @@ def apiBible(query):
     for content in contents:
         if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs'][
             'style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd' or \
-                content['attrs']['style'] == 'b':
+                content['attrs']['style'] == 'sp':
             if len(content['items']) != 0:
-                content_output += content['items'][0]['text'] + "\n\n"
+                content_output += "\n" + content['items'][0]['text'] + "\n\n"
         elif content['attrs']['style'] == 'b':
-            content_output += "\n\n"
+            pass
         elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
             for item in content['items']:
                 if 'style' in item['attrs']:
@@ -170,7 +170,10 @@ def apiBible(query):
                 elif 'text' in item:
                     content_output += item['text']
             content_output += additional_output(content['attrs']['style'])
-    return content_output
+    temp_content_output = content_output.split('\n')
+    cleaned_content_output = "\n".join(
+        [v for i, v in enumerate(temp_content_output) if i == 0 or v != temp_content_output[i - 1]])
+    return cleaned_content_output
 
 
 @send_typing_action
@@ -318,6 +321,3 @@ if __name__ == '__main__':
     # for lyrics in lyrics_content:
     #     lyrics_output = lyrics_output + lyrics.get_text() + "\n"
     # print(lyrics_output)
-
-
-

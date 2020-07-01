@@ -141,11 +141,28 @@ def verseOfTheDay(update, context):
     verse = soup.find_all(class_="verse-wrapper ml1 mr1 mt4 mb4")
     verse_output = ""
     for i in verse:
-        header = soup.find("p", class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text()
-        text = soup.find("p", class_="near-black mt0 mb2").get_text()
-    verse_output = "Verse of the Day" + "\n\n" + header + "\n\n" + text
-    print(verse_output)
+        header = (soup.find("p", class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text())
+        # text = soup.find("p", class_="near-black mt0 mb2").get_text()
+    text = header.split()
+    i = " ".join(text[0:2])
+    scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', i)[0])
+    scriptures = list(filter(lambda a: a != '', scriptures))
+    book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
+    bible_query = ""
+    # passage
+    if len(scriptures) == 4:
+        bible_query = "{}.{}.{}-{}.{}.{}".format(book_id, scriptures[1], scriptures[2], book_id, scriptures[1],
+                                                 scriptures[3])
+    # verse
+    elif len(scriptures) == 3:
+        bible_query = "{}.{}.{}".format(book_id, scriptures[1], scriptures[2])
+    elif len(scriptures) == 2:
+        bible_query = "{}.{}".format(book_id, scriptures[1])
+    content_output = apiBible(bible_query)
+    print(content_output)
+    verse_output = "Verse of the Day" + "\n\n" + i + "\n\n" + content_output
     update.message.reply_text(verse_output)
+
 
 def apiBible(query):
     response = requests.get(
@@ -326,3 +343,5 @@ if __name__ == '__main__':
     # for lyrics in lyrics_content:
     #     lyrics_output = lyrics_output + lyrics.get_text() + "\n"
     # print(lyrics_output)
+
+

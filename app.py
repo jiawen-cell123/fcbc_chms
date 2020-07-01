@@ -41,13 +41,14 @@ def send_typing_action(func):
 
 @send_typing_action
 def start(update, context):
+    context.chat_data["teamId"] = ""
     bot.send_photo(chat_id=update.message.chat_id, photo="https://fcbc.org.sg/sites/default/files/fcbc_logo.jpg",caption="Welcome to FCBC CHMS Bot"+"\n"+"How can I help you ?" )
 
 @send_typing_action
 def loginChms(update, context):
     # /loginChms 812E06111995
     db = firebase.database()
-    message  = update.message.text
+    message = update.message.text
     key = " ".join(message.split()[1:])
     print(key)
     result = db.child("chms").get()
@@ -81,28 +82,29 @@ def estatus(update, context):
     # estatus 0812E
     db = firebase.database()
     teamId = context.chat_data['teamId']
-    print(teamId)
-    list_of_nric = db.child("chms").child(teamId).get()
-    message = update.message.text
-    nric = message.split()[1].upper()
-    found_nric = False
-    for keys in list_of_nric.each():
-            if nric == keys.key():
-                final_output = " "
-                name = db.child("chms").child(teamId).child(nric).child("pinfo").child("name").get()
-                equipping = db.child("chms").child(teamId).child(nric).child("estatus").get()
-                final_output += name.val() + "\n\n"
-                for items in equipping.each():
-                    title = items.val()["title"]
-                    date = items.val()["date"]
-                    if "attendance" not in items.val():
-                        attendance = "NA"
-                    else:
-                        attendance = items.val()["attendance"]
-                    final_output += title + "\n\u2022" + date + "\n\u2022" + attendance + "\n\n"
-                found_nric = True
-                break
-
+    if teamId == "":
+            update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    else:
+        list_of_nric = db.child("chms").child(teamId).get()
+        message = update.message.text
+        nric = message.split()[1].upper()
+        found_nric = False
+        for keys in list_of_nric.each():
+                if nric == keys.key():
+                    final_output = " "
+                    name = db.child("chms").child(teamId).child(nric).child("pinfo").child("name").get()
+                    equipping = db.child("chms").child(teamId).child(nric).child("estatus").get()
+                    final_output += name.val() + "\n\n"
+                    for items in equipping.each():
+                        title = items.val()["title"]
+                        date = items.val()["date"]
+                        if "attendance" not in items.val():
+                            attendance = "NA"
+                        else:
+                            attendance = items.val()["attendance"]
+                        final_output += title + "\n\u2022" + date + "\n\u2022" + attendance + "\n\n"
+                    found_nric = True
+                    break
     if found_nric:
         update.message.reply_text(final_output)
     else:

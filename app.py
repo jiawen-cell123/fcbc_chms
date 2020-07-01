@@ -55,7 +55,7 @@ def loginChms(update, context):
     for i in result.each():
         if key == i.key():
             # {key: value}
-            context.user_data["teamId"] = key
+            context.chat_data["teamId"] = key
             found_id = True
             break
     if found_id:
@@ -78,7 +78,8 @@ def getpinfo(update, context):
 def estatus(update, context):
     # estatus 0812E
     db = firebase.database()
-    teamId = context.user_data['teamId']
+    teamId = context.chat_data['teamId']
+    print(teamId)
     list_of_nric = db.child("chms").child(teamId).get()
     message = update.message.text
     nric = message.split()[1].upper()

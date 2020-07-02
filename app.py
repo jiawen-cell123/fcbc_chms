@@ -82,13 +82,15 @@ def estatus(update, context):
     # estatus 0812E
     db = firebase.database()
     teamId = context.chat_data['teamId']
+    list_of_nric = db.child("chms").child(teamId).get()
+    message = update.message.text
+    nric = " ".join(message.split()[1:]).upper()
+    found_nric = False
     if teamId == "":
             update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    elif nric == "":
+            update.message.reply_text("Enter a Valid 4 Digit NRIC")
     else:
-        list_of_nric = db.child("chms").child(teamId).get()
-        message = update.message.text
-        nric = message.split()[1].upper()
-        found_nric = False
         for keys in list_of_nric.each():
                 if nric == keys.key():
                     final_output = " "
@@ -105,10 +107,10 @@ def estatus(update, context):
                         final_output += title + "\n\u2022" + date + "\n\u2022" + attendance + "\n\n"
                     found_nric = True
                     break
-    if found_nric:
-        update.message.reply_text(final_output)
-    else:
-        update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC !!")
+        if found_nric:
+            update.message.reply_text(final_output)
+        else:
+            update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
 
 
 @send_typing_action
@@ -160,7 +162,7 @@ def verseOfTheDay(update, context):
         bible_query = "{}.{}".format(book_id, scriptures[1])
     content_output = apiBible(bible_query)
     print(content_output)
-    verse_output = "Verse of the Day" + "\n\n" + i + "\n\n" + content_output
+    verse_output = "Verse of the Day" + "\n\n" + i +" (NIV)" + "\n\n" + content_output
     update.message.reply_text(verse_output)
 
 
@@ -323,25 +325,8 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-
+#
 if __name__ == '__main__':
     main()
-
-    # query = 'oceans'
-    # search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
-    #                            headers={"User-Agent": "Mozilla/5.0"})
-    # soup = BeautifulSoup(search_page.content, 'html.parser')
-    # best_result = soup.find(class_="showArtist showCoverart")
-    # song_title = best_result.find("a", class_="title").get_text()
-    # song_artist = best_result.find("a", class_="artist").get_text()
-    # song_href = best_result.find("a", href=True)['href']
-    # # print(href)
-    # lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_href), headers={"User-Agent": "Mozilla/5.0"})
-    # soup = BeautifulSoup(lyrics_page.content, 'html.parser')
-    # lyrics_content = soup.find_all(class_="mxm-lyrics__content")
-    # lyrics_output = "{} by {}\n\n".format(song_title, song_artist)
-    # for lyrics in lyrics_content:
-    #     lyrics_output = lyrics_output + lyrics.get_text() + "\n"
-    # print(lyrics_output)
 
 

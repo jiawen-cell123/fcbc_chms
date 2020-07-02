@@ -11,6 +11,8 @@ import abbreviation
 import json
 
 
+
+
 config = {
   "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
   "authDomain": "fcbc-chms.firebaseapp.com",
@@ -42,7 +44,19 @@ def send_typing_action(func):
 @send_typing_action
 def start(update, context):
     context.chat_data["teamId"] = ""
-    bot.send_photo(chat_id=update.message.chat_id, photo="https://fcbc.org.sg/sites/default/files/fcbc_logo.jpg",caption="Welcome to FCBC CHMS Bot"+"\n"+"How can I help you ?" )
+    bot.send_photo(chat_id=update.message.chat_id, photo=open('unnamed.jpg', 'rb'), caption =  " Hello " + update.message.from_user.first_name + ", "+ "\n\n " + "Welcome !"
+                   + "\n\n" + "This bot is able to do a few things:" + "\n\n" + "1. Fetch your current equipping status and personal information"
+                   + "\n\n" + "2. Get Bible Verses or Verse of the Day in NIV version  " + "\n\n" +
+                   "3. Get you the top 5 songs on the artist you search" + "\n\n" +
+                   "4. Get you the lyrics of the songs you search" + "\n\n" + "5. Get FCBC's Thought of the Week and 4Ws"
+                   "\n\n\n" + "To gain access to your equipping status, Kindly login with your cell leader's ID" +
+                   "\n\n" + "Start by /login <cell leader's unique ID>" + "\n" + "Followed by /estatus <last 3 digits and last letter of your NRIC> to access your equipping status" +
+                   "\n" + "or /pinfo <last 3 digits and last letter of your NRIC> to gain access to your personal information" + "\n\n" +
+                   "To access the top 5 songs simply /zxczc <ada>" + "\n" + "To gain access to the song lyrics simply /sefsf <sfef>" + "\n" +
+                    "To gain access to Bible Verses simply /get <your bible verse/passage> " +  "\n" + "To gain access to FCBC's Thought of the Week simply /TOTW " + "\n"
+                   "To gain access to FCBC's 4Ws simply /get4Ws" + "\n" + "To gain access to Verse of the Day simply /votd" + "\n\n" + "Have fun and enjoy using this bot !")
+# need to have the exact functions detailed down
+
 
 @send_typing_action
 def loginChms(update, context):

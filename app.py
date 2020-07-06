@@ -189,8 +189,10 @@ def verseOfTheDay(update, context):
         bible_query = "{}.{}".format(book_id, scriptures[1])
     content_output = apiBible(bible_query)
     print(content_output)
-    verse_output = "Verse of the Day" + "\n\n" + i +" (NIV)" + "\n\n" + content_output
-    update.message.reply_text(verse_output)
+    verse_output = "<b>Verse of the Day</b>" + "\n\n" + i +" <b>(NIV)</b>" + "\n\n" + content_output
+    bot.send_message(chat_id=update.message.chat_id,
+                     text=verse_output,
+                     parse_mode=telegram.ParseMode.HTML)
 
 
 def apiBible(query):
@@ -230,31 +232,32 @@ def apiBible(query):
 @send_typing_action
 def getTopSongs(update, context):
     message = update.message.text
-    query = message.split()[1]
+    query = " ".join(message.split()[1:])
     # clear chat lyrics data
     context.chat_data['lyrics_data'] = {}
     # query = 'marry'
     search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query), headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(search_page.content, 'html.parser')
     top_tracks = soup.find_all(class_="showArtist showCoverart", limit = 5)
-    output_top_tracks = ""
+    output_top_tracks = "<b>Top charts by {}:</b>\n\n".format(query)
     for track in top_tracks:
         title = track.find("a", class_="title").get_text()
         artist = track.find("a", class_="artist").get_text()
         href = track.find("a", href=True)['href']
         # print(href)
         uuid = str(uuid4()).upper()[:4]
-        output_top_tracks = output_top_tracks + title + "\n" + artist + "\n" + "/lyric3" + uuid  + "\n\n"
+        output_top_tracks = output_top_tracks + "💿 " + title + "\n" + "🎤 " + artist + "\n" + "/lyric3" + uuid  + "\n\n"
         # store in temp db
         context.chat_data['lyrics_data']["lyric3" + uuid] = {'title': title, 'artist': artist, 'href': href}
     # print(output_top_tracks)
-    update.message.reply_text(output_top_tracks)
+    bot.send_message(chat_id=update.message.chat_id,
+                     text=output_top_tracks,
+                     parse_mode=telegram.ParseMode.HTML)
 
 @send_typing_action
 def getSongLyrics(update, context):
     message = update.message.text
-    query = message.split()[1]
-    print(query)
+    query = " ".join(message.split()[1:])
     # query = 'ride'
     search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
                                headers={"User-Agent": "Mozilla/5.0"})
@@ -267,11 +270,10 @@ def getSongLyrics(update, context):
     lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_href), headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(lyrics_page.content, 'html.parser')
     lyrics_content = soup.find_all(class_="mxm-lyrics__content")
-    lyrics_output = "{} by {}\n\n".format(song_title, song_artist)
+    lyrics_output = "<b>{} by {}</b> 🎵\n\n".format(song_title, song_artist)
     for lyrics in lyrics_content:
         lyrics_output = lyrics_output + lyrics.get_text() + "\n"
-    update.message.reply_text(lyrics_output)
-    # print(lyrics_output)
+    bot.send_message(chat_id=update.message.chat_id, text=lyrics_output, parse_mode=telegram.ParseMode.HTML)
 
 @send_typing_action
 def scrapeLyrics(update, context):
@@ -283,7 +285,7 @@ def scrapeLyrics(update, context):
     lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_info['href']), headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(lyrics_page.content, 'html.parser')
     lyrics_content = soup.find_all(class_="mxm-lyrics__content")
-    lyrics_output = "{} by {}\n\n".format(song_info['title'], song_info['artist'])
+    lyrics_output = "{} by {} 🎵\n\n".format(song_info['title'], song_info['artist'])
     for lyrics in lyrics_content:
         lyrics_output = lyrics_output + lyrics.get_text() + "\n"
     update.message.reply_text(lyrics_output)
@@ -325,9 +327,9 @@ def get4ws(update, context):
     soup = BeautifulSoup(page.content, 'html.parser')
     pdfs = soup.find(class_="views-field views-field-field-pdfs")
     href = pdfs.find('a', href=True)['href']
-    print(href)
+    caption = "<b>4Ws For Cell Groups</b>\n\n" + pdfs.find('a', href=True).get_text()
     # document = open(href, 'rb')
-    bot.sendDocument(chat_id=update.message.chat_id, document=href)
+    bot.sendDocument(chat_id=update.message.chat_id, document=href, caption=caption, parse_mode=telegram.ParseMode.HTML)
 
 @send_typing_action
 def test(update, context):
@@ -342,12 +344,12 @@ def main():
     dp = updater.dispatcher
 
     dp.add_handler(CommandHandler('start', start))
-    dp.add_handler(CommandHandler('getpinfo', getpinfo))
+    dp.add_handler(CommandHandler('pinfo', getpinfo))
     dp.add_handler(CommandHandler('estatus', estatus))
     dp.add_handler((CommandHandler('login', loginChms)))
     dp.add_handler((CommandHandler('totw', thoughtOfTheWeek)))
     dp.add_handler((CommandHandler('votd', verseOfTheDay)))
-    dp.add_handler((CommandHandler('charts', getTopSongs)))
+    dp.add_handler((CommandHandler('songs', getTopSongs)))
     dp.add_handler((CommandHandler('lyrics', getSongLyrics)))
     dp.add_handler((MessageHandler(Filters.regex('lyric3.+'), scrapeLyrics)))
     dp.add_handler((CommandHandler('get', getBibleVerses)))
@@ -363,13 +365,18 @@ def main():
 #
 if __name__ == '__main__':
     main()
-    page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
-    soup = BeautifulSoup(page.content, 'html.parser')
-    header = soup.find_all('h1')[0].get_text()
-    image = soup.find_all("img")
-    name = ""
-    hit = soup.find("div", class_="field-content")
-    para = hit.find_all('p')
-    for i in para:
-        print(i.get_text() + "\n")
+    # page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
+    # soup = BeautifulSoup(page.content, 'html.parser')
+    # pdfs = soup.find(class_="views-field views-field-field-pdfs")
+    # href = pdfs.find('a', href=True).get_text()
+    # print(href)
 
+    #commands
+    # pinfo - retreives your personal information
+    # estatus - retreives your equipping status
+    # totw - thought of the week
+    # votd - verse of the day
+    # lyrics - retrieves lyrics of a song
+    # songs - retrieves top songs of an artist
+    # get - retrieves bible verse or passage
+    # 4ws - retrieves 4Ws for cell group

@@ -1,7 +1,7 @@
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
 import pyrebase
-from telegram import ChatAction
+from telegram import ChatAction, ParseMode
 from functools import wraps
 from bs4 import BeautifulSoup
 import requests
@@ -9,9 +9,7 @@ from uuid import uuid4
 import re
 import abbreviation
 import json
-
-
-
+import logging
 
 config = {
   "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
@@ -24,11 +22,23 @@ config = {
   "measurementId": "G-9C0W55BY70"
 };
 
+superscript_map = {
+    "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶",
+    "7": "⁷", "8": "⁸", "9": "⁹"}
+
+trans = str.maketrans(
+        ''.join(superscript_map.keys()),
+        ''.join(superscript_map.values()))
+
 firebase = pyrebase.initialize_app(config)
 
 API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
 bot = telegram.Bot(token = '1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY')
 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
 def send_typing_action(func):
@@ -44,7 +54,7 @@ def send_typing_action(func):
 @send_typing_action
 def start(update, context):
     context.chat_data["teamId"] = ""
-    bot.send_photo(chat_id=update.message.chat_id, photo=open('unnamed.jpg', 'rb'), caption =  " Hello " + update.message.from_user.first_name + ", "+ "\n\n " + "Welcome !"
+    bot.send_photo(chat_id=update.message.chat_id, photo=open('unnamed.jpg', 'rb'), caption =  " Hello " + update.message.from_user.first_name + ", "+ "\n\n" + "Welcome !"
                    + "\n\n" + "This bot is able to do a few things:" + "\n\n" + "1. Fetch your current equipping status and personal information"
                    + "\n\n" + "2. Get Bible Verses or Verse of the Day in NIV version  " + "\n\n" +
                    "3. Get you the top 5 songs on the artist you search" + "\n\n" +
@@ -60,11 +70,11 @@ def start(update, context):
 
 @send_typing_action
 def loginChms(update, context):
-    # /loginChms 812E06111995
     db = firebase.database()
     message = update.message.text
     key = " ".join(message.split()[1:])
-    print(key)
+    if key == "":
+        update.message.reply_text("Please try again like this /login <password>.")
     result = db.child("chms").get()
     found_id = False
     for i in result.each():
@@ -74,9 +84,9 @@ def loginChms(update, context):
             found_id = True
             break
     if found_id:
-        update.message.reply_text("login successful")
+        update.message.reply_text("You have login successfully!")
     else:
-        update.message.reply_text("login unsuccessful")
+        update.message.reply_text("Invalid credentials, please try again.")
 
 @send_typing_action
 def getpinfo(update, context):
@@ -103,14 +113,14 @@ def estatus(update, context):
     if teamId == "":
             update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
     elif nric == "":
-            update.message.reply_text("Enter a Valid 4 Digit NRIC")
+            update.message.reply_text("Enter a valid 4 Digit NRIC")
     else:
         for keys in list_of_nric.each():
                 if nric == keys.key():
-                    final_output = " "
+                    final_output = ""
                     name = db.child("chms").child(teamId).child(nric).child("pinfo").child("name").get()
                     equipping = db.child("chms").child(teamId).child(nric).child("estatus").get()
-                    final_output += name.val() + "\n\n"
+                    final_output += "<b>{}</b>\n\n".format(name.val())
                     for items in equipping.each():
                         title = items.val()["title"]
                         date = items.val()["date"]
@@ -118,11 +128,13 @@ def estatus(update, context):
                             attendance = "NA"
                         else:
                             attendance = items.val()["attendance"]
-                        final_output += title + "\n\u2022" + date + "\n\u2022" + attendance + "\n\n"
+                        final_output += "<b>{}</b>\n\u2022{}\n\u2022{}\n\n".format(title, date, attendance)
                     found_nric = True
                     break
         if found_nric:
-            update.message.reply_text(final_output)
+            # update.message.reply_text(final_output, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+            print(final_output)
+            bot.send_message(chat_id=update.message.chat_id, text = final_output, parse_mode=telegram.ParseMode.HTML)
         else:
             update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
 
@@ -136,7 +148,7 @@ def thoughtOfTheWeek(update, context):
     name = ""
     for hit in soup.findAll(class_="views-field views-field-body"):
         output = ""
-        output = header + "\n" + hit.text
+        output = "\n" + hit.text
     for i in image:
         src = i["src"]
         if "jpg" in src:
@@ -144,10 +156,10 @@ def thoughtOfTheWeek(update, context):
     # get the source of the image
     url = "fcbc.org.sg" + name
     #combining fcbc.org.sg to source of the image
-    print(output)
-    bot.send_photo(chat_id=update.message.chat_id, photo=url)
-    update.message.reply_text(output)
-    #must use update.message.chat_id to send picture using telegram bot
+    content = '<a href="{}">{}</a>{}'.format(url, header, output)
+    bot.send_message(chat_id=update.message.chat_id,
+                     text=content,
+                     parse_mode=telegram.ParseMode.HTML)    #must use update.message.chat_id to send picture using telegram bot
 
 
 @send_typing_action
@@ -189,20 +201,21 @@ def apiBible(query):
         headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
     json_response = response.json()
     contents = json_response['data']['content']
-    content_output = ""
+    reference = json_response['data']['reference']
+    content_output = "<b>{} (NIV)</b>\n\n".format(reference)
     for content in contents:
         if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs'][
             'style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd' or \
                 content['attrs']['style'] == 'sp':
             if len(content['items']) != 0:
-                content_output += "\n" + content['items'][0]['text'] + "\n\n"
+                content_output += "\n<b>{}</b>\n\n".format(content['items'][0]['text'])
         elif content['attrs']['style'] == 'b':
             pass
         elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
             for item in content['items']:
                 if 'style' in item['attrs']:
                     if item['attrs']['style'] == 'v':
-                        content_output += item['attrs']['number']
+                        content_output += item['attrs']['number'].translate(trans)
                     elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
                         content_output += item['items'][0]['text']
                 elif 'text' in item:
@@ -212,7 +225,6 @@ def apiBible(query):
     cleaned_content_output = "\n".join(
         [v for i, v in enumerate(temp_content_output) if i == 0 or v != temp_content_output[i - 1]])
     return cleaned_content_output
-
 
 @send_typing_action
 def getTopSongs(update, context):
@@ -293,7 +305,9 @@ def getBibleVerses(update, context):
     elif len(scriptures) == 2:
         bible_query = "{}.{}".format(book_id, scriptures[1])
     content_output = apiBible(bible_query)
-    update.message.reply_text(content_output)
+    bot.send_message(chat_id=update.message.chat_id,
+                     text=content_output,
+                     parse_mode=telegram.ParseMode.HTML)
 
 
 def additional_output(style):
@@ -314,6 +328,11 @@ def get4ws(update, context):
     # document = open(href, 'rb')
     bot.sendDocument(chat_id=update.message.chat_id, document=href)
 
+@send_typing_action
+def test(update, context):
+    bot.send_message(chat_id=update.message.chat_id,
+                     text='<b>bold</b> <i>italic</i> <a href="http://google.com">link</a>.',
+                     parse_mode=telegram.ParseMode.HTML)
 
 def main():
     updater = Updater(API_KEY, use_context=True)
@@ -332,6 +351,7 @@ def main():
     dp.add_handler((MessageHandler(Filters.regex('lyric3.+'), scrapeLyrics)))
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
+    dp.add_handler((CommandHandler('test', test)))
     # Start the Bot
     updater.start_polling()
 
@@ -342,5 +362,10 @@ def main():
 #
 if __name__ == '__main__':
     main()
-
+    response = requests.get(
+        'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/JHN.3.16?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse'
+        '-numbers=true&include-verse-spans=false&use-org-id=false',
+        headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
+    json_response = response.json()
+    print(json_response)
 

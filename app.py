@@ -146,9 +146,11 @@ def thoughtOfTheWeek(update, context):
     header = soup.find_all('h1')[0].get_text()
     image = soup.find_all("img")
     name = ""
-    for hit in soup.findAll(class_="views-field views-field-body"):
-        output = ""
-        output = "\n" + hit.text
+    content = ""
+    hit = soup.find("div", class_="field-content")
+    para = hit.find_all('p')
+    for i in para:
+        content += i.get_text() + "\n\n"
     for i in image:
         src = i["src"]
         if "jpg" in src:
@@ -156,11 +158,10 @@ def thoughtOfTheWeek(update, context):
     # get the source of the image
     url = "fcbc.org.sg" + name
     #combining fcbc.org.sg to source of the image
-    content = '<a href="{}">{}</a>{}'.format(url, header, output)
+    content = '<b>Thought of the week</b>\n\n<a href="{}">{}</a>{}'.format(url, header, content)
     bot.send_message(chat_id=update.message.chat_id,
                      text=content,
                      parse_mode=telegram.ParseMode.HTML)    #must use update.message.chat_id to send picture using telegram bot
-
 
 @send_typing_action
 def verseOfTheDay(update, context):
@@ -362,10 +363,13 @@ def main():
 #
 if __name__ == '__main__':
     main()
-    response = requests.get(
-        'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/JHN.3.16?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse'
-        '-numbers=true&include-verse-spans=false&use-org-id=false',
-        headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
-    json_response = response.json()
-    print(json_response)
+    page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    header = soup.find_all('h1')[0].get_text()
+    image = soup.find_all("img")
+    name = ""
+    hit = soup.find("div", class_="field-content")
+    para = hit.find_all('p')
+    for i in para:
+        print(i.get_text() + "\n")
 

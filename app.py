@@ -90,16 +90,22 @@ def loginChms(update, context):
 
 @send_typing_action
 def getpinfo(update, context):
+    # /pinfo 808E
     db = firebase.database()
+    teamId = context.chat_data['teamId']
     message = update.message.text
     nric = " ".join(message.split()[1:]).upper()
-    result = db.child("chms").child("812E06111995").child(nric).child("pinfo").get()
-    if result.val():
-        output = ""
-        output = (result.each())[2].val() + "\n" + "\u2022 " + (result.each())[1].val() + "\n" + "\u2022 " + (result.each())[0].val()
-        update.message.reply_text(output)
+    p_info = db.child("chms").child(teamId).child(nric).child("pinfo").get()
+    if teamId == "":
+        update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
     else:
-        update.message.reply_text("You have entered an invalid IC number")
+        if p_info.val():
+            output = ""
+            output = (p_info.each())[2].val() + "\n" + "\u2022 " + (p_info.each())[1].val() + "\n" + "\u2022 " + (p_info.each())[0].val()
+            update.message.reply_text(output)
+
+        else:
+            update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
 
 @send_typing_action
 def estatus(update, context):
@@ -138,6 +144,18 @@ def estatus(update, context):
         else:
             update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
 
+@send_typing_action
+def getBirthdays(update, context):
+    db = firebase.database()
+    teamId = context.chat_data['teamId']
+    list_of_birthdays = db.child("chms").child(teamId).get()
+    if teamId == "":
+        update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    else:
+        if list_of_birthdays.val():
+            output = ""
+            output = (list_of_birthdays.each())[2].val() + " - " + (list_of_birthdays.each())[1].val()
+            update.message.reply_text(output)
 
 @send_typing_action
 def thoughtOfTheWeek(update, context):
@@ -355,6 +373,7 @@ def main():
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
     dp.add_handler((CommandHandler('test', test)))
+    dp.add_handler((CommandHandler('birthdays', getBirthdays)))
     # Start the Bot
     updater.start_polling()
 

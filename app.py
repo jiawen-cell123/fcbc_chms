@@ -185,14 +185,9 @@ def thoughtOfTheWeek(update, context):
 def verseOfTheDay(update, context):
     page = requests.get("https://www.bible.com/verse-of-the-day")
     soup = BeautifulSoup(page.content, 'html.parser')
-    verse = soup.find_all(class_="verse-wrapper ml1 mr1 mt4 mb4")
-    verse_output = ""
-    for i in verse:
-        header = (soup.find("p", class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text())
-        # text = soup.find("p", class_="near-black mt0 mb2").get_text()
-    text = header.split()
-    i = " ".join(text[0:2])
-    scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', i)[0])
+    verse = soup.find(class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text()
+    verse_query = re.findall('(.+) ', verse)[0]
+    scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', verse_query)[0])
     scriptures = list(filter(lambda a: a != '', scriptures))
     book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
     bible_query = ""
@@ -206,8 +201,7 @@ def verseOfTheDay(update, context):
     elif len(scriptures) == 2:
         bible_query = "{}.{}".format(book_id, scriptures[1])
     content_output = apiBible(bible_query)
-    print(content_output)
-    verse_output = "<b>Verse of the Day</b>" + "\n\n" + i +" <b>(NIV)</b>" + "\n\n" + content_output
+    verse_output = "<b>Verse of the Day</b>" + "\n\n" + content_output
     bot.send_message(chat_id=update.message.chat_id,
                      text=verse_output,
                      parse_mode=telegram.ParseMode.HTML)
@@ -221,6 +215,8 @@ def apiBible(query):
             query),
         headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
     json_response = response.json()
+    if json_response['statusCode'] == 404:
+        return False
     contents = json_response['data']['content']
     reference = json_response['data']['reference']
     content_output = "<b>{} (NIV)</b>\n\n".format(reference)
@@ -256,8 +252,12 @@ def getTopSongs(update, context):
     # query = 'marry'
     search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query), headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(search_page.content, 'html.parser')
+    if soup.find(class_="empty"):
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Sorry {}, we couldn't find what you were looking for.".format(user.first_name))
+        return
     top_tracks = soup.find_all(class_="showArtist showCoverart", limit = 5)
-    output_top_tracks = "<b>Top charts by {}:</b>\n\n".format(query)
+    output_top_tracks = "<b>Top search results on {}:</b>\n\n".format(query)
     for track in top_tracks:
         title = track.find("a", class_="title").get_text()
         artist = track.find("a", class_="artist").get_text()
@@ -275,11 +275,16 @@ def getTopSongs(update, context):
 @send_typing_action
 def getSongLyrics(update, context):
     message = update.message.text
+    user = update.message.from_user
     query = " ".join(message.split()[1:])
     # query = 'ride'
     search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
                                headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(search_page.content, 'html.parser')
+
+    if soup.find(class_="empty"):
+        bot.send_message(chat_id=update.message.chat_id, text="Sorry {}, we couldn't find what you were looking for.".format(user.first_name))
+        return
     best_result = soup.find(class_="showArtist showCoverart")
     song_title = best_result.find("a", class_="title").get_text()
     song_artist = best_result.find("a", class_="artist").get_text()
@@ -311,6 +316,7 @@ def scrapeLyrics(update, context):
 @send_typing_action
 def getBibleVerses(update, context):
     message = update.message.text
+    user = update.message.from_user
     query = message.split(" ", 1)[1]
     scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])
     scriptures = list(filter(lambda a: a != '', scriptures))
@@ -326,9 +332,13 @@ def getBibleVerses(update, context):
     elif len(scriptures) == 2:
         bible_query = "{}.{}".format(book_id, scriptures[1])
     content_output = apiBible(bible_query)
-    bot.send_message(chat_id=update.message.chat_id,
-                     text=content_output,
-                     parse_mode=telegram.ParseMode.HTML)
+    if content_output is False:
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Sorry {}, we cannot find what you're looking for.".format(user))
+    else:
+        bot.send_message(chat_id=update.message.chat_id,
+                        text=content_output,
+                        parse_mode=telegram.ParseMode.HTML)
 
 
 def additional_output(style):
@@ -339,6 +349,7 @@ def additional_output(style):
     if style == 'q2':
         return '\n'
 
+
 @send_typing_action
 def get4ws(update, context):
     page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
@@ -348,12 +359,6 @@ def get4ws(update, context):
     caption = "<b>4Ws For Cell Groups</b>\n\n" + pdfs.find('a', href=True).get_text()
     # document = open(href, 'rb')
     bot.sendDocument(chat_id=update.message.chat_id, document=href, caption=caption, parse_mode=telegram.ParseMode.HTML)
-
-@send_typing_action
-def test(update, context):
-    bot.send_message(chat_id=update.message.chat_id,
-                     text='<b>bold</b> <i>italic</i> <a href="http://google.com">link</a>.',
-                     parse_mode=telegram.ParseMode.HTML)
 
 def main():
     updater = Updater(API_KEY, use_context=True)
@@ -372,7 +377,6 @@ def main():
     dp.add_handler((MessageHandler(Filters.regex('lyric3.+'), scrapeLyrics)))
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
-    dp.add_handler((CommandHandler('test', test)))
     dp.add_handler((CommandHandler('birthdays', getBirthdays)))
     # Start the Bot
     updater.start_polling()
@@ -384,12 +388,6 @@ def main():
 #
 if __name__ == '__main__':
     main()
-    # page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
-    # soup = BeautifulSoup(page.content, 'html.parser')
-    # pdfs = soup.find(class_="views-field views-field-field-pdfs")
-    # href = pdfs.find('a', href=True).get_text()
-    # print(href)
-
     #commands
     # pinfo - retreives your personal information
     # estatus - retreives your equipping status

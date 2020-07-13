@@ -62,7 +62,7 @@ def start(update, context):
                    "\n\n\n" + "To gain access to your equipping status, Kindly login with your cell leader's ID" +
                    "\n\n" + "Start by /login <cell leader's unique ID>" + "\n" + "Followed by /estatus <last 3 digits and last letter of your NRIC> to access your equipping status" +
                    "\n" + "or /pinfo <last 3 digits and last letter of your NRIC> to gain access to your personal information" + "\n\n" +
-                   "To access the top 5 songs simply /zxczc <ada>" + "\n" + "To gain access to the song lyrics simply /sefsf <sfef>" + "\n" +
+                   "To access the top 5 songs simply /songs <song artist>" + "\n" + "To gain access to the song lyrics simply /lyrics <song title>" + "\n" +
                     "To gain access to Bible Verses simply /get <your bible verse/passage> " +  "\n" + "To gain access to FCBC's Thought of the Week simply /TOTW " + "\n"
                    "To gain access to FCBC's 4Ws simply /get4Ws" + "\n" + "To gain access to Verse of the Day simply /votd" + "\n\n" + "Have fun and enjoy using this bot !")
 # need to have the exact functions detailed down
@@ -403,7 +403,7 @@ def main():
     updater.idle()
 #
 if __name__ == '__main__':
-    # main()
+    main()
 
     # db = firebase.database()
     # teamId = "812E06111995"

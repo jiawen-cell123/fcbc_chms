@@ -92,7 +92,7 @@ def loginChms(update, context):
 def getpinfo(update, context):
     # /pinfo 808E
     db = firebase.database()
-    teamId = context.chat_date['teamId']
+    teamId = context.chat_data['teamId']
     message = update.message.text
     nric = " ".join(message.split()[1:]).upper()
     p_info = db.child("chms").child(teamId).child(nric).child("pinfo").get()
@@ -376,6 +376,7 @@ def get4ws(update, context):
     # document = open(href, 'rb')
     bot.sendDocument(chat_id=update.message.chat_id, document=href, caption=caption, parse_mode=telegram.ParseMode.HTML)
 
+
 def main():
     updater = Updater(API_KEY, use_context=True)
 
@@ -394,6 +395,7 @@ def main():
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
     dp.add_handler((CommandHandler('birthdays', getBirthdays)))
+    dp.add_handler((CommandHandler('joshua', joshuasayshi)))
     # Start the Bot
     updater.start_polling()
 
@@ -403,43 +405,37 @@ def main():
     updater.idle()
 #
 if __name__ == '__main__':
-    # main()
+    main()
 
-    # db = firebase.database()
-    # teamId = "812E06111995"
-    # # message = update.message.text
-    # # nric = " ".join(message.split()[1:]).upper()
-    # p_info = db.child("chms").child(teamId).child("808E").child("pinfo").get()
-    # # if teamId == "":
-    # #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    # # elif teamId == 'teamId':
-    # address = p_info.val()["address"]
-    # dob = p_info.val()["dob"]
-    # name = p_info.val()["name"]
-    # print(name + "\n" + "\u2022 " + dob + "\n" + "\u2022 " + address)
-    # # else:
-    # #     update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
-
-    # # @send_typing_action
-    # # def getpinfo(update, context):
-    # #     # /pinfo 808E
-    #     db = firebase.database()
-    #     teamId = "812E06111995"
-    #     # message = update.message.text
-    #     # nric = " ".join(message.split()[1:]).upper()
-    #     p_info = db.child("chms").child(teamId).child("808E").child("pinfo").get()
-    #     # if teamId == "":
-    #     #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    #     # else:
-    #     if p_info.val():
-    #             output = ""
-    #             output = (p_info.each())[2].val() + "\n" + "\u2022 " + (p_info.each())[1].val() + "\n" + "\u2022 " + \
-    #                      (p_info.each())[0].val()
-    #             print(output)
-    #
-    #         # else:
-    #         #     update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
-
+    db = firebase.database()
+    # teamId = context.chat_data['teamId']
+    teamId = '812E06111995'
+    get_IC = db.child("chms").child(teamId).get()
+    monthConversions = {
+        "01": "January",
+        "02": "February",
+        "03": "March",
+        "04": "April",
+        "05": "May",
+        "06": "June",
+        "07": "July",
+        "08": "August",
+        "09": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December",
+    }
+    output = ""
+    if teamId == "":
+        print("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    else:
+        for i in get_IC.each():
+            birthday = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
+            list_of_birthdays = birthday.val()["dob"]
+            dob = list_of_birthdays[8:10] + " " + monthConversions[list_of_birthdays[5:7]]
+            name = birthday.val()["name"]
+            output += name + "\n" + dob + "\n\n"
+        print("List of Birthdays!🥳🎂" + "\n\n" + output)
 
     #commands
     # pinfo - retreives your personal information

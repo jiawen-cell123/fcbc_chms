@@ -62,7 +62,7 @@ def start(update, context):
                    "\n\n\n" + "To gain access to your equipping status, Kindly login with your cell leader's ID" +
                    "\n\n" + "Start by /login <cell leader's unique ID>" + "\n" + "Followed by /estatus <last 3 digits and last letter of your NRIC> to access your equipping status" +
                    "\n" + "or /pinfo <last 3 digits and last letter of your NRIC> to gain access to your personal information" + "\n\n" +
-                   "To access the top 5 songs simply /zxczc <ada>" + "\n" + "To gain access to the song lyrics simply /sefsf <sfef>" + "\n" +
+                   "To access the top 5 songs simply /songs <song artist>" + "\n" + "To gain access to the song lyrics simply /lyrics <song title>" + "\n" +
                     "To gain access to Bible Verses simply /get <your bible verse/passage> " +  "\n" + "To gain access to FCBC's Thought of the Week simply /TOTW " + "\n"
                    "To gain access to FCBC's 4Ws simply /get4Ws" + "\n" + "To gain access to Verse of the Day simply /votd" + "\n\n" + "Have fun and enjoy using this bot !")
 # need to have the exact functions detailed down
@@ -406,6 +406,44 @@ def main():
 #
 if __name__ == '__main__':
     main()
+<<<<<<< HEAD
+=======
+
+    # db = firebase.database()
+    # teamId = "812E06111995"
+    # # message = update.message.text
+    # # nric = " ".join(message.split()[1:]).upper()
+    # p_info = db.child("chms").child(teamId).child("808E").child("pinfo").get()
+    # # if teamId == "":
+    # #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    # # elif teamId == 'teamId':
+    # address = p_info.val()["address"]
+    # dob = p_info.val()["dob"]
+    # name = p_info.val()["name"]
+    # print(name + "\n" + "\u2022 " + dob + "\n" + "\u2022 " + address)
+    # # else:
+    # #     update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
+
+    # # @send_typing_action
+    # # def getpinfo(update, context):
+    # #     # /pinfo 808E
+    #     db = firebase.database()
+    #     teamId = "812E06111995"
+    #     # message = update.message.text
+    #     # nric = " ".join(message.split()[1:]).upper()
+    #     p_info = db.child("chms").child(teamId).child("808E").child("pinfo").get()
+    #     # if teamId == "":
+    #     #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    #     # else:
+    #     if p_info.val():
+    #             output = ""
+    #             output = (p_info.each())[2].val() + "\n" + "\u2022 " + (p_info.each())[1].val() + "\n" + "\u2022 " + \
+    #                      (p_info.each())[0].val()
+    #             print(output)
+    #
+    #         # else:
+    #         #     update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
+>>>>>>> 6f826761a26fba266e84606e4b9ad8066e07cc74
 
     db = firebase.database()
     # teamId = context.chat_data['teamId']

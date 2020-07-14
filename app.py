@@ -35,6 +35,8 @@ firebase = pyrebase.initialize_app(config)
 API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
 bot = telegram.Bot(token = '1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY')
 
+db = firebase.database()
+
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
@@ -73,6 +75,7 @@ def loginChms(update, context):
     db = firebase.database()
     message = update.message.text
     key = " ".join(message.split()[1:])
+    storeChatId(update, key)
     if key == "":
         update.message.reply_text("Please try again like this /login <password>.")
     result = db.child("chms").get()
@@ -87,6 +90,13 @@ def loginChms(update, context):
         update.message.reply_text("You have login successfully!")
     else:
         update.message.reply_text("Invalid credentials, please try again.")
+
+def storeChatId(update, teamId):
+    chatId = update.message.chat_id
+    chatId_final = "".join((re.findall("\w", chatId)))
+    data = {"chatid": chatId_final}
+    db.child("chatdetails").child(teamId).set(data)
+
 
 @send_typing_action
 def getpinfo(update, context):
@@ -405,7 +415,7 @@ def main():
     updater.idle()
 #
 if __name__ == '__main__':
-    main()
+    # main()
 
     # query = "john 3:100"
     # scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])
@@ -474,3 +484,7 @@ if __name__ == '__main__':
     # songs - retrieves top songs of an artist
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
+
+    x = "-450521802"
+    y = "".join((re.findall("\w", x)))
+    print(y)

@@ -54,17 +54,17 @@ def send_typing_action(func):
 @send_typing_action
 def start(update, context):
     context.chat_data["teamId"] = ""
-    bot.send_photo(chat_id=update.message.chat_id, photo=open('unnamed.jpg', 'rb'), caption =  " Hello " + update.message.from_user.first_name + ", "+ "\n\n" + "Welcome !"
-                   + "\n\n" + "This bot is able to do a few things:" + "\n\n" + "1. Fetch your current equipping status and personal information"
-                   + "\n\n" + "2. Get Bible Verses or Verse of the Day in NIV version  " + "\n\n" +
-                   "3. Get you the top 5 songs on the artist you search" + "\n\n" +
-                   "4. Get you the lyrics of the songs you search" + "\n\n" + "5. Get FCBC's Thought of the Week and 4Ws"
-                   "\n\n\n" + "To gain access to your equipping status, Kindly login with your cell leader's ID" +
-                   "\n\n" + "Start by /login <cell leader's unique ID>" + "\n" + "Followed by /estatus <last 3 digits and last letter of your NRIC> to access your equipping status" +
-                   "\n" + "or /pinfo <last 3 digits and last letter of your NRIC> to gain access to your personal information" + "\n\n" +
-                   "To access the top 5 songs simply /songs <song artist>" + "\n" + "To gain access to the song lyrics simply /lyrics <song title>" + "\n" +
-                    "To gain access to Bible Verses simply /get <your bible verse/passage> " +  "\n" + "To gain access to FCBC's Thought of the Week simply /TOTW " + "\n"
-                   "To gain access to FCBC's 4Ws simply /get4Ws" + "\n" + "To gain access to Verse of the Day simply /votd" + "\n\n" + "Have fun and enjoy using this bot !")
+    bot.send_photo(chat_id=update.message.chat_id, photo=open('unnamed.jpg', 'rb'), caption =  " Hello " + update.message.from_user.first_name + ", "+ "\n\n" + "Welcome !")
+                   # + "\n\n" + "This bot is able to do a few things:" + "\n\n" + "1. Fetch your current equipping status and personal information"
+                   # + "\n\n" + "2. Get Bible Verses or Verse of the Day in NIV version  " + "\n\n" +
+                   # "3. Get you the top 5 songs on the artist you search" + "\n\n" +
+                   # "4. Get you the lyrics of the songs you search" + "\n\n" + "5. Get FCBC's Thought of the Week and 4Ws"
+                   # "\n\n\n" + "To gain access to your equipping status, Kindly login with your cell leader's ID" +
+                   # "\n\n" + "Start by /login <cell leader's unique ID>" + "\n" + "Followed by /estatus <last 3 digits and last letter of your NRIC> to access your equipping status" +
+                   # "\n" + "or /pinfo <last 3 digits and last letter of your NRIC> to gain access to your personal information" + "\n\n" +
+                   # "To access the top 5 songs simply /songs <song artist>" + "\n" + "To gain access to the song lyrics simply /lyrics <song title>" + "\n" +
+                   #  "To gain access to Bible Verses simply /get <your bible verse/passage> " +  "\n" + "To gain access to FCBC's Thought of the Week simply /TOTW " + "\n"
+                   # "To gain access to FCBC's 4Ws simply /get4Ws" + "\n" + "To gain access to Verse of the Day simply /votd" + "\n\n" + "Have fun and enjoy using this bot !")
 # need to have the exact functions detailed down
 
 
@@ -231,7 +231,7 @@ def apiBible(query):
             query),
         headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
     json_response = response.json()
-    if json_response['statusCode'] == 404:
+    if 'statusCode' in json_response and json_response['statusCode'] == 404:
         return False
     contents = json_response['data']['content']
     reference = json_response['data']['reference']
@@ -350,7 +350,7 @@ def getBibleVerses(update, context):
     content_output = apiBible(bible_query)
     if content_output is False:
         bot.send_message(chat_id=update.message.chat_id,
-                         text="Sorry {}, we cannot find what you're looking for.".format(user))
+                         text="Sorry {}, we cannot find what you're looking for.".format(user.first_name))
     else:
         bot.send_message(chat_id=update.message.chat_id,
                         text=content_output,
@@ -395,7 +395,7 @@ def main():
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
     dp.add_handler((CommandHandler('birthdays', getBirthdays)))
-    dp.add_handler((CommandHandler('joshua', joshuasayshi)))
+    # dp.add_handler((CommandHandler('joshua', joshuasayshi)))
     # Start the Bot
     updater.start_polling()
 
@@ -406,74 +406,64 @@ def main():
 #
 if __name__ == '__main__':
     main()
-<<<<<<< HEAD
-=======
 
-    # db = firebase.database()
-    # teamId = "812E06111995"
-    # # message = update.message.text
-    # # nric = " ".join(message.split()[1:]).upper()
-    # p_info = db.child("chms").child(teamId).child("808E").child("pinfo").get()
-    # # if teamId == "":
-    # #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    # # elif teamId == 'teamId':
-    # address = p_info.val()["address"]
-    # dob = p_info.val()["dob"]
-    # name = p_info.val()["name"]
-    # print(name + "\n" + "\u2022 " + dob + "\n" + "\u2022 " + address)
-    # # else:
-    # #     update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
-
-    # # @send_typing_action
-    # # def getpinfo(update, context):
-    # #     # /pinfo 808E
-    #     db = firebase.database()
-    #     teamId = "812E06111995"
-    #     # message = update.message.text
-    #     # nric = " ".join(message.split()[1:]).upper()
-    #     p_info = db.child("chms").child(teamId).child("808E").child("pinfo").get()
-    #     # if teamId == "":
-    #     #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    #     # else:
-    #     if p_info.val():
-    #             output = ""
-    #             output = (p_info.each())[2].val() + "\n" + "\u2022 " + (p_info.each())[1].val() + "\n" + "\u2022 " + \
-    #                      (p_info.each())[0].val()
-    #             print(output)
+    # query = "john 3:100"
+    # scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])
+    # scriptures = list(filter(lambda a: a != '', scriptures))
+    # book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
+    # bible_query = ""
+    # # passage
+    # if len(scriptures) == 4:
+    #     bible_query = "{}.{}.{}-{}.{}.{}".format(book_id, scriptures[1], scriptures[2], book_id, scriptures[1],
+    #                                              scriptures[3])
+    # # verse
+    # elif len(scriptures) == 3:
+    #     bible_query = "{}.{}.{}".format(book_id, scriptures[1], scriptures[2])
+    # elif len(scriptures) == 2:
+    #     bible_query = "{}.{}".format(book_id, scriptures[1])
+    # response = requests.get(
+    #     'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/{'
+    #     '}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse'
+    #     '-numbers=true&include-verse-spans=false&use-org-id=false'.format(
+    #         bible_query),
+    #     headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
+    # json_response = response.json()
+    # print(json_response)
+    # if json_response['statusCode'] == 404:
     #
-    #         # else:
-    #         #     update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
->>>>>>> 6f826761a26fba266e84606e4b9ad8066e07cc74
-
-    db = firebase.database()
-    # teamId = context.chat_data['teamId']
-    teamId = '812E06111995'
-    get_IC = db.child("chms").child(teamId).get()
-    monthConversions = {
-        "01": "January",
-        "02": "February",
-        "03": "March",
-        "04": "April",
-        "05": "May",
-        "06": "June",
-        "07": "July",
-        "08": "August",
-        "09": "September",
-        "10": "October",
-        "11": "November",
-        "12": "December",
-    }
-    output = ""
-    if teamId == "":
-        print("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    else:
-        for i in get_IC.each():
-            birthday = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-            list_of_birthdays = birthday.val()["dob"]
-            dob = list_of_birthdays[8:10] + " " + monthConversions[list_of_birthdays[5:7]]
-            name = birthday.val()["name"]
-            output += name + "\n" + dob + "\n\n"
-        print("List of Birthdays!🥳🎂" + "\n\n" + output)
+    # contents = json_response['data']['content']
+    # reference = json_response['data']['reference']
+    # content_output = "<b>{} (NIV)</b>\n\n".format(reference)
+    # for content in contents:
+    #     if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs'][
+    #         'style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd' or \
+    #             content['attrs']['style'] == 'sp':
+    #         if len(content['items']) != 0:
+    #             content_output += "\n<b>{}</b>\n\n".format(content['items'][0]['text'])
+    #     elif content['attrs']['style'] == 'b':
+    #         pass
+    #     elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
+    #         for item in content['items']:
+    #             if 'style' in item['attrs']:
+    #                 if item['attrs']['style'] == 'v':
+    #                     content_output += item['attrs']['number'].translate(trans)
+    #                 elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
+    #                     content_output += item['items'][0]['text']
+    #             elif 'text' in item:
+    #                 content_output += item['text']
+    #         content_output += additional_output(content['attrs']['style'])
+    # temp_content_output = content_output.split('\n')
+    # cleaned_content_output = "\n".join(
+    #     [v for i, v in enumerate(temp_content_output) if i == 0 or v != temp_content_output[i - 1]])
+    # print(cleaned_content_output)
+    # content_output = apiBible(bible_query)
+    # if content_output is False:
+    #     bot.send_message(chat_id=update.message.chat_id,
+    #                      text="Sorry {}, we cannot find what you're looking for.".format(user))
+    # else:
+    #     bot.send_message(chat_id=update.message.chat_id,
+    #                      text=content_output,
+    #                      parse_mode=telegram.ParseMode.HTML)
 
     #commands
     # pinfo - retreives your personal information

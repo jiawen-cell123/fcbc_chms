@@ -10,6 +10,7 @@ import re
 import abbreviation
 import json
 import logging
+import datetime
 
 config = {
   "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
@@ -177,10 +178,14 @@ def getBirthdays(update, context):
         for i in get_IC.each():
             birthday = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
             list_of_birthdays = birthday.val()["dob"]
-            dob = list_of_birthdays[8:10] + " " + monthConversions[list_of_birthdays[5:7]]
+            day = list_of_birthdays[8:10]
+            month_num = list_of_birthdays[5:7]
+            month = monthConversions[month_num]
+            dob = day + " " + month
             name = birthday.val()["name"]
-            output += name + "\n" + dob + "\n\n"
-        update.message.reply_text("List of Birthdays!🥳🎂" + "\n\n" + output)
+            output += "<b>{}</b>\n{}\n\n".format(name, dob)
+        final_output = "List of Birthdays!🥳🎂" + "\n\n" + output
+        bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
 
 @send_typing_action
 def thoughtOfTheWeek(update, context):
@@ -416,63 +421,9 @@ def main():
 if __name__ == '__main__':
     main()
 
-    # query = "john 3:100"
-    # scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])
-    # scriptures = list(filter(lambda a: a != '', scriptures))
-    # book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
-    # bible_query = ""
-    # # passage
-    # if len(scriptures) == 4:
-    #     bible_query = "{}.{}.{}-{}.{}.{}".format(book_id, scriptures[1], scriptures[2], book_id, scriptures[1],
-    #                                              scriptures[3])
-    # # verse
-    # elif len(scriptures) == 3:
-    #     bible_query = "{}.{}.{}".format(book_id, scriptures[1], scriptures[2])
-    # elif len(scriptures) == 2:
-    #     bible_query = "{}.{}".format(book_id, scriptures[1])
-    # response = requests.get(
-    #     'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/{'
-    #     '}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse'
-    #     '-numbers=true&include-verse-spans=false&use-org-id=false'.format(
-    #         bible_query),
-    #     headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
-    # json_response = response.json()
-    # print(json_response)
-    # if json_response['statusCode'] == 404:
-    #
-    # contents = json_response['data']['content']
-    # reference = json_response['data']['reference']
-    # content_output = "<b>{} (NIV)</b>\n\n".format(reference)
-    # for content in contents:
-    #     if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs'][
-    #         'style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd' or \
-    #             content['attrs']['style'] == 'sp':
-    #         if len(content['items']) != 0:
-    #             content_output += "\n<b>{}</b>\n\n".format(content['items'][0]['text'])
-    #     elif content['attrs']['style'] == 'b':
-    #         pass
-    #     elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
-    #         for item in content['items']:
-    #             if 'style' in item['attrs']:
-    #                 if item['attrs']['style'] == 'v':
-    #                     content_output += item['attrs']['number'].translate(trans)
-    #                 elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
-    #                     content_output += item['items'][0]['text']
-    #             elif 'text' in item:
-    #                 content_output += item['text']
-    #         content_output += additional_output(content['attrs']['style'])
-    # temp_content_output = content_output.split('\n')
-    # cleaned_content_output = "\n".join(
-    #     [v for i, v in enumerate(temp_content_output) if i == 0 or v != temp_content_output[i - 1]])
-    # print(cleaned_content_output)
-    # content_output = apiBible(bible_query)
-    # if content_output is False:
-    #     bot.send_message(chat_id=update.message.chat_id,
-    #                      text="Sorry {}, we cannot find what you're looking for.".format(user))
-    # else:
-    #     bot.send_message(chat_id=update.message.chat_id,
-    #                      text=content_output,
-    #                      parse_mode=telegram.ParseMode.HTML)
+    # birthdays = datetime.date(2020, 7, 29) - datetime.date.today()
+    # birthdays = str(birthdays)
+    # print(birthdays.strip("0: ,"))
 
     #commands
     # pinfo - retreives your personal information
@@ -484,6 +435,6 @@ if __name__ == '__main__':
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
 
-    x = "-450521802"
-    y = "".join((re.findall("\w", x)))
-    print(y)
+    # x = "-450521802"
+    # y = "".join((re.findall("\w", x)))
+    # print(y)

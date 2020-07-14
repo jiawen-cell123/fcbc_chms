@@ -92,9 +92,8 @@ def loginChms(update, context):
         update.message.reply_text("Invalid credentials, please try again.")
 
 def storeChatId(update, teamId):
-    chatId = update.message.chat_id
-    chatId_final = "".join((re.findall("\w", chatId)))
-    data = {"chatid": chatId_final}
+    chatId = str(abs(int(update.message.chat_id)))
+    data = {"chatid": chatId}
     db.child("chatdetails").child(teamId).set(data)
 
 
@@ -415,7 +414,7 @@ def main():
     updater.idle()
 #
 if __name__ == '__main__':
-    # main()
+    main()
 
     # query = "john 3:100"
     # scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])

@@ -93,7 +93,7 @@ def loginChms(update, context):
         update.message.reply_text("Invalid credentials, please try again.")
 
 def storeChatId(update, teamId):
-    chatId = str(abs(int(update.message.chat_id)))
+    chatId = update.message.chat_id
     data = {"chatid": chatId}
     db.child("chatdetails").child(teamId).set(data)
 

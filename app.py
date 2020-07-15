@@ -434,7 +434,38 @@ if __name__ == '__main__':
     # songs - retrieves top songs of an artist
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
+    teamId = "812E06111995"
+    monthConversions = {
+        "01": "January",
+        "02": "February",
+        "03": "March",
+        "04": "April",
+        "05": "May",
+        "06": "June",
+        "07": "July",
+        "08": "August",
+        "09": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December",
+    }
+    rslt = db.child("chms").child(teamId).get();
+    birthdays = {}
+    for i in rslt.each():
+        values = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
+        name = values.val()['name']
+        birthday = values.val()["dob"].replace("-", "")[4:]
+        birthdays[name] = birthday #{gerald: 654837563, josh: 5454353}
+    birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
 
-    # x = "-450521802"
-    # y = "".join((re.findall("\w", x)))
-    # print(y)
+    output = ""
+    for j in birthday_sorted:
+        month = birthday_sorted[j][4:6]
+        day = birthday_sorted[j][6:8]
+        birthday_expression = day + " " + monthConversions[month]
+        output += j + "\n" + birthday_expression + "\n\n"
+    print(output)
+
+
+
+

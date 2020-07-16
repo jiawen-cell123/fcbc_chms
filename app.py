@@ -12,6 +12,7 @@ import json
 import logging
 import datetime
 
+
 config = {
   "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
   "authDomain": "fcbc-chms.firebaseapp.com",
@@ -108,6 +109,8 @@ def getpinfo(update, context):
     p_info = db.child("chms").child(teamId).child(nric).child("pinfo").get()
     if teamId == "":
         update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    elif nric == "":
+        update.message.reply_text("Enter a valid 4 Digit NRIC")
     else:
         address = p_info.val()["address"]
         dob = p_info.val()["dob"]
@@ -418,8 +421,8 @@ def main():
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 #
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
 
     # birthdays = datetime.date(2020, 7, 29) - datetime.date.today()
     # birthdays = str(birthdays)
@@ -434,37 +437,75 @@ if __name__ == '__main__':
     # songs - retrieves top songs of an artist
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
-    teamId = "812E06111995"
-    monthConversions = {
-        "01": "January",
-        "02": "February",
-        "03": "March",
-        "04": "April",
-        "05": "May",
-        "06": "June",
-        "07": "July",
-        "08": "August",
-        "09": "September",
-        "10": "October",
-        "11": "November",
-        "12": "December",
-    }
-    rslt = db.child("chms").child(teamId).get();
-    birthdays = {}
-    for i in rslt.each():
-        values = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-        name = values.val()['name']
-        birthday = values.val()["dob"].replace("-", "")[4:]
-        birthdays[name] = birthday #{gerald: 654837563, josh: 5454353}
-    birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
 
-    output = ""
-    for j in birthday_sorted:
-        month = birthday_sorted[j][4:6]
-        day = birthday_sorted[j][6:8]
-        birthday_expression = day + " " + monthConversions[month]
-        output += j + "\n" + birthday_expression + "\n\n"
-    print(output)
+
+#sorting
+# teamId = "812E06111995"
+# monthConversions = {
+#         "01": "January",
+#         "02": "February",
+#         "03": "March",
+#         "04": "April",
+#         "05": "May",
+#         "06": "June",
+#         "07": "July",
+#         "08": "August",
+#         "09": "September",
+#         "10": "October",
+#         "11": "November",
+#         "12": "December",
+#     }
+# rslt = db.child("chms").child(teamId).get();
+# birthdays = {}
+# for i in rslt.each():
+#     values = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
+#     name = values.val()['name']
+#     birthday = values.val()["dob"].replace("-", "")[4:]
+#     birthdays[name] = birthday #{gerald: 654837563, josh: 5454353}
+# birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
+# output = ""
+# for j in birthday_sorted:
+#     print(birthday_sorted[j])
+#     month = birthday_sorted[j][0:2]
+#     day = birthday_sorted[j][2:4]
+#     birthday_expression = day + " " + monthConversions[month]
+#     output += j + "\n" + birthday_expression + "\n\n"
+# print(output)
+
+#calculate number of days to bday
+# db = firebase.database()
+# teamId = "812E06111995"
+# get_IC = db.child("chms").child(teamId).get()
+# monthConversions = {
+#         "01": "January",
+#         "02": "February",
+#         "03": "March",
+#         "04": "April",
+#         "05": "May",
+#         "06": "June",
+#         "07": "July",
+#         "08": "August",
+#         "09": "September",
+#         "10": "October",
+#         "11": "November",
+#         "12": "December",
+#     }
+# for i in get_IC.each():
+#     birthday = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
+#     list_of_birthdays = birthday.val()["dob"]
+#     name = birthday.val()["name"]
+#     day = int(list_of_birthdays[8:10])
+#     month_num = int(list_of_birthdays[5:7])
+#     now = datetime.datetime.now()
+#     bday = datetime.date(now.year, month_num, day)
+#     tday = datetime.date.today()
+#     till_bday = bday - tday
+#     if till_bday.days < 0 :
+#         print(name + " over")
+#     elif till_bday.days == 0:
+#         print("happy birthday kiddo! " + name)
+#     else:
+#         print(name +" " + str(till_bday.days) + " days")
 
 
 

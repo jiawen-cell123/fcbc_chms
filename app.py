@@ -115,7 +115,9 @@ def getpinfo(update, context):
         address = p_info.val()["address"]
         dob = p_info.val()["dob"]
         name = p_info.val()["name"]
-        update.message.reply_text(name + "\n" + "\u2022 " + dob + "\n" + "\u2022 " + address)
+        final_output = "<b>{}</b>\n\u2022{}\n\u2022{}".format(name, dob, address)
+        bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
+
 
 @send_typing_action
 def estatus(update, context):
@@ -174,19 +176,37 @@ def getBirthdays(update, context):
         "11": "November",
         "12": "December",
     }
-    output = ""
+    birthdays = {}
     if teamId == "":
         update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
     else:
         for i in get_IC.each():
-            birthday = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-            list_of_birthdays = birthday.val()["dob"]
-            day = list_of_birthdays[8:10]
-            month_num = list_of_birthdays[5:7]
-            month = monthConversions[month_num]
-            dob = day + " " + month
-            name = birthday.val()["name"]
-            output += "<b>{}</b>\n{}\n\n".format(name, dob)
+            p_info = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
+            name = p_info.val()['name']
+            birthday = p_info.val()["dob"].replace("-", "")[4:]
+            birthdays[name] = birthday  # {gerald: 654837563, josh: 5454353}
+        birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
+        output = ""
+        for j in birthday_sorted:
+            month = birthday_sorted[j][0:2]
+            day = birthday_sorted[j][2:4]
+            name = j
+            if month[0] == "0":
+                month_nozero = month[1]
+            else:
+                month_nozero = month
+            now = datetime.datetime.now()
+            bday = datetime.date(now.year, int(month_nozero), int(day))
+            current_day = datetime.date.today()
+            till_bday = bday - current_day
+            if till_bday.days < 0:
+                TEST = name
+            elif till_bday.days == 0:
+                TEST = "Happy Birthday " + name + "!🥳🎂"
+            else:
+                TEST = name + " (" + str(till_bday.days) + " days left!)"
+            birthday_expression = day + " " + monthConversions[month]
+            output += "{}\n{}\n\n".format(TEST, birthday_expression)
         final_output = "List of Birthdays!🥳🎂" + "\n\n" + output
         bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
 
@@ -420,9 +440,9 @@ def main():
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-#
-# if __name__ == '__main__':
-#     main()
+
+if __name__ == '__main__':
+    main()
 
     # birthdays = datetime.date(2020, 7, 29) - datetime.date.today()
     # birthdays = str(birthdays)
@@ -437,76 +457,5 @@ def main():
     # songs - retrieves top songs of an artist
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
-
-
-#sorting
-# teamId = "812E06111995"
-# monthConversions = {
-#         "01": "January",
-#         "02": "February",
-#         "03": "March",
-#         "04": "April",
-#         "05": "May",
-#         "06": "June",
-#         "07": "July",
-#         "08": "August",
-#         "09": "September",
-#         "10": "October",
-#         "11": "November",
-#         "12": "December",
-#     }
-# rslt = db.child("chms").child(teamId).get();
-# birthdays = {}
-# for i in rslt.each():
-#     values = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-#     name = values.val()['name']
-#     birthday = values.val()["dob"].replace("-", "")[4:]
-#     birthdays[name] = birthday #{gerald: 654837563, josh: 5454353}
-# birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
-# output = ""
-# for j in birthday_sorted:
-#     print(birthday_sorted[j])
-#     month = birthday_sorted[j][0:2]
-#     day = birthday_sorted[j][2:4]
-#     birthday_expression = day + " " + monthConversions[month]
-#     output += j + "\n" + birthday_expression + "\n\n"
-# print(output)
-
-#calculate number of days to bday
-# db = firebase.database()
-# teamId = "812E06111995"
-# get_IC = db.child("chms").child(teamId).get()
-# monthConversions = {
-#         "01": "January",
-#         "02": "February",
-#         "03": "March",
-#         "04": "April",
-#         "05": "May",
-#         "06": "June",
-#         "07": "July",
-#         "08": "August",
-#         "09": "September",
-#         "10": "October",
-#         "11": "November",
-#         "12": "December",
-#     }
-# for i in get_IC.each():
-#     birthday = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-#     list_of_birthdays = birthday.val()["dob"]
-#     name = birthday.val()["name"]
-#     day = int(list_of_birthdays[8:10])
-#     month_num = int(list_of_birthdays[5:7])
-#     now = datetime.datetime.now()
-#     bday = datetime.date(now.year, month_num, day)
-#     tday = datetime.date.today()
-#     till_bday = bday - tday
-#     if till_bday.days < 0 :
-#         print(name + " over")
-#     elif till_bday.days == 0:
-#         print("happy birthday kiddo! " + name)
-#     else:
-#         print(name +" " + str(till_bday.days) + " days")
-
-
 
 

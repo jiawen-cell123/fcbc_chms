@@ -186,7 +186,7 @@ def getBirthdays(update, context):
             birthday = p_info.val()["dob"].replace("-", "")[4:]
             birthdays[name] = birthday  # {gerald: 654837563, josh: 5454353}
         birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
-        output = ""
+        output_2 = ""
         for j in birthday_sorted:
             month = birthday_sorted[j][0:2]
             day = birthday_sorted[j][2:4]
@@ -198,16 +198,19 @@ def getBirthdays(update, context):
             now = datetime.datetime.now()
             bday = datetime.date(now.year, int(month_nozero), int(day))
             current_day = datetime.date.today()
+            current_month = datetime.datetime.now().month
             till_bday = bday - current_day
             if till_bday.days < 0:
-                TEST = name
+                output_1 = name
             elif till_bday.days == 0:
-                TEST = "Happy Birthday " + name + "!🥳🎂"
+                output_1 = "Happy Birthday " + name + "!🥳🎂"
+            elif int(month_nozero) == current_month:
+                output_1 = name + " (" + str(till_bday.days) + " days left!)"
             else:
-                TEST = name + " (" + str(till_bday.days) + " days left!)"
+                output_1 = name
             birthday_expression = day + " " + monthConversions[month]
-            output += "{}\n{}\n\n".format(TEST, birthday_expression)
-        final_output = "List of Birthdays!🥳🎂" + "\n\n" + output
+            output_2 += "<b>{}</b>\n{}\n\n".format(output_1, birthday_expression)
+        final_output = "List of Birthdays!🥳🎂" + "\n\n" + output_2
         bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
 
 @send_typing_action
@@ -447,6 +450,66 @@ if __name__ == '__main__':
     # birthdays = datetime.date(2020, 7, 29) - datetime.date.today()
     # birthdays = str(birthdays)
     # print(birthdays.strip("0: ,"))
+
+    # db = firebase.database()
+    # teamId = "812E06111995"
+    # get_IC = db.child("chms").child(teamId).get()
+    # monthConversions = {
+    #     "01": "January",
+    #     "02": "February",
+    #     "03": "March",
+    #     "04": "April",
+    #     "05": "May",
+    #     "06": "June",
+    #     "07": "July",
+    #     "08": "August",
+    #     "09": "September",
+    #     "10": "October",
+    #     "11": "November",
+    #     "12": "December",
+    # }
+    # birthdays = {}
+    # if teamId == "":
+    #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    # else:
+    #     for i in get_IC.each():
+    #         p_info = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
+    #         name = p_info.val()['name']
+    #         birthday = p_info.val()["dob"].replace("-", "")[4:]
+    #         birthdays[name] = birthday  # {gerald: 654837563, josh: 5454353}
+    #     birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
+    #     output_2 = ""
+    #     for j in birthday_sorted:
+    #         month = birthday_sorted[j][0:2]
+    #         day = birthday_sorted[j][2:4]
+    #         name = j
+    #         if month[0] == "0":
+    #             month_nozero = month[1]
+    #         else:
+    #             month_nozero = month
+    #         now = datetime.datetime.now()
+    #         bday = datetime.date(now.year, int(month_nozero), int(day))
+    #         current_day = datetime.date.today()
+    #         current_month = datetime.datetime.now().month
+    #         till_bday = bday - current_day
+    #         if till_bday.days < 0:
+    #             output_1 = name
+    #         elif till_bday.days == 0:
+    #             output_1 = "Happy Birthday " + name + "!🥳🎂"
+    #         elif int(month_nozero) == current_month:
+    #             output_1 = name + " (" + str(till_bday.days) + " days left!)"
+    #         else:
+    #             output_1 = name
+    #         birthday_expression = day + " " + monthConversions[month]
+    #         output_2 += "{}\n{}\n\n".format(output_1, birthday_expression)
+    #     final_output = "List of Birthdays!🥳🎂" + "\n\n" + output_2
+    #     bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
+
+    # current_month = datetime.datetime.now().month
+    # print(current_month)
+
+
+
 
     #commands
     # pinfo - retreives your personal information

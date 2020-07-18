@@ -445,7 +445,7 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
-    main()
+    # main()
 
     # birthdays = datetime.date(2020, 7, 29) - datetime.date.today()
     # birthdays = str(birthdays)
@@ -520,5 +520,18 @@ if __name__ == '__main__':
     # songs - retrieves top songs of an artist
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
+
+
+    #/lastsermons
+    # 11-12 July 2020	The Blessings of Submission	Apostle Lawrence Khong <link>
+    # 4-5 July 2020	Order in the House: Submission	Senior Pastor Daniel Khong <link>
+
+    page = requests.get("https://www.fcbc.org.sg/celebration/media-downloads")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    title = soup.find(class_="title")
+    print(title.get_text())
+
+
+
 
 

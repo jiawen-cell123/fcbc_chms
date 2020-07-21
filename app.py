@@ -107,16 +107,25 @@ def getpinfo(update, context):
     message = update.message.text
     nric = " ".join(message.split()[1:]).upper()
     p_info = db.child("chms").child(teamId).child(nric).child("pinfo").get()
+    list_of_nric = db.child("chms").child(teamId).get()
+    found_nric = False
     if teamId == "":
         update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
     elif nric == "":
         update.message.reply_text("Enter a valid 4 Digit NRIC")
     else:
-        address = p_info.val()["address"]
-        dob = p_info.val()["dob"]
-        name = p_info.val()["name"]
-        final_output = "<b>{}</b>\n\u2022{}\n\u2022{}".format(name, dob, address)
-        bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
+        for keys in list_of_nric.each():
+            if nric == keys.key():
+                address = p_info.val()["address"]
+                dob = p_info.val()["dob"]
+                name = p_info.val()["name"]
+                final_output = "<b>{}</b>\n\u2022{}\n\u2022{}".format(name, dob, address)
+                found_nric = True
+                break
+        if found_nric:
+            bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
+        else:
+            update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
 
 
 @send_typing_action
@@ -416,6 +425,116 @@ def get4ws(update, context):
     # document = open(href, 'rb')
     bot.sendDocument(chat_id=update.message.chat_id, document=href, caption=caption, parse_mode=telegram.ParseMode.HTML)
 
+@send_typing_action
+def getSermons(update, context):
+    page = requests.get("https://www.fcbc.org.sg/celebration/media-downloads")
+    soup = BeautifulSoup(page.content, 'html.parser')
+    english_h = soup.find_all('span')[1].text
+    date_h = soup.find_all('strong')[0].text
+    title_h = soup.find_all('strong')[1].text
+    speaker_h = soup.find_all('strong')[2].text
+    english_list = []
+    for link in soup.findAll('a', attrs={'href': re.compile("^http://")}):
+        if "Eng_Sermon_320.mp4" in link.get("href"):
+            english_list.append(link.get('href'))
+
+    first_sermon = english_list[0]
+    second_sermon = english_list[1]
+    third_sermon = english_list[2]
+    fourth_sermon = english_list[3]
+    fifth_sermon = english_list[4]
+    sixth_sermon = english_list[5]
+    seventh_sermon = english_list[6]
+    eighth_sermon = english_list[7]
+
+    text_list = []
+    for text in soup.findAll('td', attrs={'valign': re.compile("top")}):
+        text_list.append(text.text)
+    date_one = text_list[0]
+    title_one = text_list[1]
+    speaker_one = text_list[2]
+
+    date_two = text_list[5]
+    title_two = text_list[6]
+    speaker_two = text_list[7]
+
+    date_three = text_list[10]
+    title_three = text_list[11]
+    speaker_three = text_list[12]
+
+    date_four = text_list[15]
+    title_four = text_list[16]
+    speaker_four = text_list[17]
+
+    date_five = text_list[20]
+    title_five = text_list[21]
+    speaker_five = text_list[22]
+
+    date_six = text_list[25]
+    title_six = text_list[26]
+    speaker_six = text_list[27]
+
+    date_seven = text_list[30]
+    title_seven = text_list[31]
+    speaker_seven = text_list[32]
+
+    date_eight = text_list[35]
+    title_eight = text_list[36]
+    speaker_eight = text_list[37]
+
+    first_sermon_final = "<b>{}</b>✝️\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(english_h,
+                                                                                                            date_h,
+                                                                                                            date_one,
+                                                                                                            title_h,
+                                                                                                            title_one,
+                                                                                                            speaker_h,
+                                                                                                            speaker_one,
+                                                                                                            first_sermon)
+
+    second_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                                date_two, title_h,
+                                                                                                title_two, speaker_h,
+                                                                                                speaker_two,
+                                                                                                second_sermon)
+
+    third_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                               date_three, title_h,
+                                                                                               title_three, speaker_h,
+                                                                                               speaker_three,
+                                                                                               third_sermon)
+
+    fourth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                                date_four, title_h,
+                                                                                                title_four, speaker_h,
+                                                                                                speaker_four,
+                                                                                                fourth_sermon)
+
+    fifth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                               date_five, title_h,
+                                                                                               title_five, speaker_h,
+                                                                                               speaker_five,
+                                                                                               fifth_sermon)
+
+    sixth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                               date_six, title_h,
+                                                                                               title_six, speaker_h,
+                                                                                               speaker_six,
+                                                                                               sixth_sermon)
+
+    seventh_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                                 date_seven, title_h,
+                                                                                                 title_seven, speaker_h,
+                                                                                                 speaker_seven,
+                                                                                                 seventh_sermon)
+
+    eighth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
+                                                                                                date_eight, title_h,
+                                                                                                title_eight, speaker_h,
+                                                                                                speaker_eight,
+                                                                                                eighth_sermon)
+
+    final_output = first_sermon_final + "\n\n" + second_sermon_final + "\n\n" + third_sermon_final + "\n\n" + fourth_sermon_final + "\n\n" + fifth_sermon_final + "\n\n" + sixth_sermon_final + "\n\n" + seventh_sermon_final + "\n\n" + eighth_sermon_final
+    bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
 
 def main():
     updater = Updater(API_KEY, use_context=True)
@@ -435,7 +554,7 @@ def main():
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
     dp.add_handler((CommandHandler('birthdays', getBirthdays)))
-    # dp.add_handler((CommandHandler('joshua', joshuasayshi)))
+    dp.add_handler((CommandHandler('sermons', getSermons)))
     # Start the Bot
     updater.start_polling()
 
@@ -445,70 +564,7 @@ def main():
     updater.idle()
 
 if __name__ == '__main__':
-    # main()
-
-    # birthdays = datetime.date(2020, 7, 29) - datetime.date.today()
-    # birthdays = str(birthdays)
-    # print(birthdays.strip("0: ,"))
-
-    # db = firebase.database()
-    # teamId = "812E06111995"
-    # get_IC = db.child("chms").child(teamId).get()
-    # monthConversions = {
-    #     "01": "January",
-    #     "02": "February",
-    #     "03": "March",
-    #     "04": "April",
-    #     "05": "May",
-    #     "06": "June",
-    #     "07": "July",
-    #     "08": "August",
-    #     "09": "September",
-    #     "10": "October",
-    #     "11": "November",
-    #     "12": "December",
-    # }
-    # birthdays = {}
-    # if teamId == "":
-    #     update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    # else:
-    #     for i in get_IC.each():
-    #         p_info = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-    #         name = p_info.val()['name']
-    #         birthday = p_info.val()["dob"].replace("-", "")[4:]
-    #         birthdays[name] = birthday  # {gerald: 654837563, josh: 5454353}
-    #     birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
-    #     output_2 = ""
-    #     for j in birthday_sorted:
-    #         month = birthday_sorted[j][0:2]
-    #         day = birthday_sorted[j][2:4]
-    #         name = j
-    #         if month[0] == "0":
-    #             month_nozero = month[1]
-    #         else:
-    #             month_nozero = month
-    #         now = datetime.datetime.now()
-    #         bday = datetime.date(now.year, int(month_nozero), int(day))
-    #         current_day = datetime.date.today()
-    #         current_month = datetime.datetime.now().month
-    #         till_bday = bday - current_day
-    #         if till_bday.days < 0:
-    #             output_1 = name
-    #         elif till_bday.days == 0:
-    #             output_1 = "Happy Birthday " + name + "!🥳🎂"
-    #         elif int(month_nozero) == current_month:
-    #             output_1 = name + " (" + str(till_bday.days) + " days left!)"
-    #         else:
-    #             output_1 = name
-    #         birthday_expression = day + " " + monthConversions[month]
-    #         output_2 += "{}\n{}\n\n".format(output_1, birthday_expression)
-    #     final_output = "List of Birthdays!🥳🎂" + "\n\n" + output_2
-    #     bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
-
-    # current_month = datetime.datetime.now().month
-    # print(current_month)
-
-
+    main()
 
 
     #commands
@@ -522,14 +578,6 @@ if __name__ == '__main__':
     # 4ws - retrieves 4Ws for cell group
 
 
-    #/lastsermons
-    # 11-12 July 2020	The Blessings of Submission	Apostle Lawrence Khong <link>
-    # 4-5 July 2020	Order in the House: Submission	Senior Pastor Daniel Khong <link>
-
-    page = requests.get("https://www.fcbc.org.sg/celebration/media-downloads")
-    soup = BeautifulSoup(page.content, 'html.parser')
-    title = soup.find(class_="title")
-    print(title.get_text())
 
 
 

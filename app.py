@@ -427,114 +427,24 @@ def get4ws(update, context):
 
 @send_typing_action
 def getSermons(update, context):
-    page = requests.get("https://www.fcbc.org.sg/celebration/media-downloads")
+    page = requests.get("https://fcbc.org.sg/celebration/media-downloads")
     soup = BeautifulSoup(page.content, 'html.parser')
-    english_h = soup.find_all('span')[1].text
-    date_h = soup.find_all('strong')[0].text
-    title_h = soup.find_all('strong')[1].text
-    speaker_h = soup.find_all('strong')[2].text
-    english_list = []
-    for link in soup.findAll('a', attrs={'href': re.compile("^http://")}):
-        if "Eng_Sermon_320.mp4" in link.get("href"):
-            english_list.append(link.get('href'))
+    link = soup.find(class_="views-row views-row-1 views-row-odd views-row-first views-row-last")
+    title = link.findAll('td', {'valign': 'top'})  # change link to soup to get all
+    output = ""
+    f_output = ""
+    for i in title[0:15]:
+        extract = i.findAll("a", href=True)
+        text = i.text
+        output += text + "\n"
+        for z in extract:
+            if "mp4" in z.get("href"):
+                output += "Video:" + z.get("href") + "\n\n"
+            else:
+                output += "Audio:" + z.get("href") + "\n"
+    f_output = "English Sermons ✝️" + "\n\n"+ output
+    bot.send_message(chat_id=update.message.chat_id, text=f_output, parse_mode=telegram.ParseMode.HTML)
 
-    first_sermon = english_list[0]
-    second_sermon = english_list[1]
-    third_sermon = english_list[2]
-    fourth_sermon = english_list[3]
-    fifth_sermon = english_list[4]
-    sixth_sermon = english_list[5]
-    seventh_sermon = english_list[6]
-    eighth_sermon = english_list[7]
-
-    text_list = []
-    for text in soup.findAll('td', attrs={'valign': re.compile("top")}):
-        text_list.append(text.text)
-    date_one = text_list[0]
-    title_one = text_list[1]
-    speaker_one = text_list[2]
-
-    date_two = text_list[5]
-    title_two = text_list[6]
-    speaker_two = text_list[7]
-
-    date_three = text_list[10]
-    title_three = text_list[11]
-    speaker_three = text_list[12]
-
-    date_four = text_list[15]
-    title_four = text_list[16]
-    speaker_four = text_list[17]
-
-    date_five = text_list[20]
-    title_five = text_list[21]
-    speaker_five = text_list[22]
-
-    date_six = text_list[25]
-    title_six = text_list[26]
-    speaker_six = text_list[27]
-
-    date_seven = text_list[30]
-    title_seven = text_list[31]
-    speaker_seven = text_list[32]
-
-    date_eight = text_list[35]
-    title_eight = text_list[36]
-    speaker_eight = text_list[37]
-
-    first_sermon_final = "<b>{}</b>✝️\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(english_h,
-                                                                                                            date_h,
-                                                                                                            date_one,
-                                                                                                            title_h,
-                                                                                                            title_one,
-                                                                                                            speaker_h,
-                                                                                                            speaker_one,
-                                                                                                            first_sermon)
-
-    second_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                                date_two, title_h,
-                                                                                                title_two, speaker_h,
-                                                                                                speaker_two,
-                                                                                                second_sermon)
-
-    third_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                               date_three, title_h,
-                                                                                               title_three, speaker_h,
-                                                                                               speaker_three,
-                                                                                               third_sermon)
-
-    fourth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                                date_four, title_h,
-                                                                                                title_four, speaker_h,
-                                                                                                speaker_four,
-                                                                                                fourth_sermon)
-
-    fifth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                               date_five, title_h,
-                                                                                               title_five, speaker_h,
-                                                                                               speaker_five,
-                                                                                               fifth_sermon)
-
-    sixth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                               date_six, title_h,
-                                                                                               title_six, speaker_h,
-                                                                                               speaker_six,
-                                                                                               sixth_sermon)
-
-    seventh_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                                 date_seven, title_h,
-                                                                                                 title_seven, speaker_h,
-                                                                                                 speaker_seven,
-                                                                                                 seventh_sermon)
-
-    eighth_sermon_final = "<b>{}</b>: {}\n<b>{}</b>: {}\n<b>{}</b>: {}\n<b>Link</b>: {}".format(date_h,
-                                                                                                date_eight, title_h,
-                                                                                                title_eight, speaker_h,
-                                                                                                speaker_eight,
-                                                                                                eighth_sermon)
-
-    final_output = first_sermon_final + "\n\n" + second_sermon_final + "\n\n" + third_sermon_final + "\n\n" + fourth_sermon_final + "\n\n" + fifth_sermon_final + "\n\n" + sixth_sermon_final + "\n\n" + seventh_sermon_final + "\n\n" + eighth_sermon_final
-    bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
 
 def main():
     updater = Updater(API_KEY, use_context=True)

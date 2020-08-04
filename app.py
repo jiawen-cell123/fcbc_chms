@@ -1,48 +1,56 @@
 import telegram
 from telegram.ext import Updater, CommandHandler, Filters, MessageHandler
 import pyrebase
-from telegram import ChatAction, ParseMode
+from telegram import ChatAction
 from functools import wraps
 from bs4 import BeautifulSoup
 import requests
 from uuid import uuid4
 import re
-import abbreviation
-import json
-import logging
+import os
 import datetime
+import html2text
 
+# environmental variables
+BOT_TOKEN = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
+BIBLE_API_TOKEN = "643c03c56dfaef821ef0247f1aa2dde0"
+FIREBASE_TOKEN = "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk"
+# PORT = int(os.environ.get('PORT', '8443'))
 
+# initialisation
 config = {
-  "apiKey": "AIzaSyB008v4XejOl06TBFdRe3VjtxbbnfvLRCk",
-  "authDomain": "fcbc-chms.firebaseapp.com",
-  "databaseURL": "https://fcbc-chms.firebaseio.com",
-  "projectId": "fcbc-chms",
-  "storageBucket": "fcbc-chms.appspot.com",
-  "messagingSenderId": "821279803740",
-  "appId": "1:821279803740:web:2c212f82f5436d45031999",
-  "measurementId": "G-9C0W55BY70"
-};
+    "apiKey": FIREBASE_TOKEN,
+    "authDomain": "fcbc-chms.firebaseapp.com",
+    "databaseURL": "https://fcbc-chms.firebaseio.com",
+    "projectId": "fcbc-chms",
+    "storageBucket": "fcbc-chms.appspot.com",
+    "messagingSenderId": "821279803740",
+    "appId": "1:821279803740:web:2c212f82f5436d45031999",
+    "measurementId": "G-9C0W55BY70"
+}
+firebase = pyrebase.initialize_app(config)
+bot = telegram.Bot(token=BOT_TOKEN)
+db = firebase.database()
+h = html2text.HTML2Text()
 
+# constants
+TOTW_URL = "https://fcbc.org.sg/celebration/our-thoughts-this-week"
+VOTD_URL = "https://www.bible.com/verse-of-the-day"
+CELL_WORD_URL = "https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups"
 superscript_map = {
     "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶",
     "7": "⁷", "8": "⁸", "9": "⁹"}
-
 trans = str.maketrans(
-        ''.join(superscript_map.keys()),
-        ''.join(superscript_map.values()))
-
-firebase = pyrebase.initialize_app(config)
-
-API_KEY = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
-bot = telegram.Bot(token = '1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY')
-
-db = firebase.database()
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-
-logger = logging.getLogger(__name__)
+    ''.join(superscript_map.keys()),
+    ''.join(superscript_map.values()))
+queries_regex = {'book': '^([\w\s]+[a-z])\W(\d+)$', 'verse': '^([\w\s]+[a-z])\W(\d+)\W(\d+)$',
+                 'passage': '^([\w\s]+[a-z])\W(\d+)\W(\d+)\W(\d+)$'}
+monthConversions = {1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
+                    7: "July", 8: "August", 9: "September", 10: "October", 11: "November",
+                    12: "December"}
+developers = {'@jiawenlor': ['jiawen', 'jw'], '@Geraldlim95': ['gerald'], '@tehontherocks': ['amadaues', 'ama'],
+              '@happpyfuntimess': ['joshua', 'josh'], '@zx0123': ['zhixin']}
+special_messages = {"testtest": ["test", "test1", "test2"]}
 
 
 def send_typing_action(func):
@@ -55,176 +63,111 @@ def send_typing_action(func):
 
     return command_func
 
+
 @send_typing_action
 def start(update, context):
-    context.chat_data["teamId"] = ""
-    bot.send_photo(chat_id=update.message.chat_id, photo=open('unnamed.jpg', 'rb'), caption =  " Hello " + update.message.from_user.first_name + ", "+ "\n\n" + "Welcome !")
-                   # + "\n\n" + "This bot is able to do a few things:" + "\n\n" + "1. Fetch your current equipping status and personal information"
-                   # + "\n\n" + "2. Get Bible Verses or Verse of the Day in NIV version  " + "\n\n" +
-                   # "3. Get you the top 5 songs on the artist you search" + "\n\n" +
-                   # "4. Get you the lyrics of the songs you search" + "\n\n" + "5. Get FCBC's Thought of the Week and 4Ws"
-                   # "\n\n\n" + "To gain access to your equipping status, Kindly login with your cell leader's ID" +
-                   # "\n\n" + "Start by /login <cell leader's unique ID>" + "\n" + "Followed by /estatus <last 3 digits and last letter of your NRIC> to access your equipping status" +
-                   # "\n" + "or /pinfo <last 3 digits and last letter of your NRIC> to gain access to your personal information" + "\n\n" +
-                   # "To access the top 5 songs simply /songs <song artist>" + "\n" + "To gain access to the song lyrics simply /lyrics <song title>" + "\n" +
-                   #  "To gain access to Bible Verses simply /get <your bible verse/passage> " +  "\n" + "To gain access to FCBC's Thought of the Week simply /TOTW " + "\n"
-                   # "To gain access to FCBC's 4Ws simply /get4Ws" + "\n" + "To gain access to Verse of the Day simply /votd" + "\n\n" + "Have fun and enjoy using this bot !")
-# need to have the exact functions detailed down
-
-
-@send_typing_action
-def loginChms(update, context):
-    db = firebase.database()
-    message = update.message.text
-    key = " ".join(message.split()[1:])
-    storeChatId(update, key)
-    if key == "":
-        update.message.reply_text("Please try again like this /login <password>.")
-    result = db.child("chms").get()
-    found_id = False
-    for i in result.each():
-        if key == i.key():
-            # {key: value}
-            context.chat_data["teamId"] = key
-            found_id = True
-            break
-    if found_id:
-        update.message.reply_text("You have login successfully!")
-    else:
-        update.message.reply_text("Invalid credentials, please try again.")
-
-def storeChatId(update, teamId):
-    chatId = update.message.chat_id
-    data = {"chatid": chatId}
-    db.child("chatdetails").child(teamId).set(data)
+    bot.send_photo(chat_id=update.message.chat_id, photo=open('background.jpg', 'rb'),
+                   caption="Hello {}, welcome to FCBC Telebot✌️. I can do a few things: \n\n😇 /get <bible passage> "
+                           "\n🎵 /lyrics <song title> \n🎶 /songs <song artist> \n💌 /votd \n💭 /totw "
+                           "\n\nPress /list to see the full list of commands.".format(
+                       update.message.from_user.first_name))
 
 
 @send_typing_action
 def getpinfo(update, context):
-    # /pinfo 808E
-    db = firebase.database()
-    teamId = context.chat_data['teamId']
+    user = update.message.from_user.first_name
     message = update.message.text
     nric = " ".join(message.split()[1:]).upper()
-    p_info = db.child("chms").child(teamId).child(nric).child("pinfo").get()
-    list_of_nric = db.child("chms").child(teamId).get()
-    found_nric = False
-    if teamId == "":
-        update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    elif nric == "":
-        update.message.reply_text("Enter a valid 4 Digit NRIC")
+    p_info = db.child("pinfo").child(nric).get()
+    if nric == "":
+        update.message.reply_text("Sorry {}, please enter a valid 4 Digit NRIC".format(user))
     else:
-        for keys in list_of_nric.each():
-            if nric == keys.key():
-                address = p_info.val()["address"]
-                dob = p_info.val()["dob"]
-                name = p_info.val()["name"]
-                final_output = "<b>{}</b>\n\u2022{}\n\u2022{}".format(name, dob, address)
-                found_nric = True
-                break
-        if found_nric:
+        if nric in db.child("pinfo").get().val():
+            address = p_info.val()["address"]
+            dob = p_info.val()["dob"]
+            name = p_info.val()["name"]
+            final_output = "Hi {}, here is your personal information: \n\n<b>{}</b>\n\u2022{}\n\u2022{}".format(user,
+                                                                                                                name,
+                                                                                                                dob,
+                                                                                                                address)
             bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
         else:
-            update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
+            update.message.reply_text("Hi {}, we are unable to retrieve your equipping status, please contact the "
+                                      "admin for assistance.")
 
 
 @send_typing_action
 def estatus(update, context):
-    # estatus 0812E
-    db = firebase.database()
-    teamId = context.chat_data['teamId']
-    list_of_nric = db.child("chms").child(teamId).get()
+    user = update.message.from_user.first_name
     message = update.message.text
     nric = " ".join(message.split()[1:]).upper()
-    found_nric = False
-    if teamId == "":
-            update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
-    elif nric == "":
-            update.message.reply_text("Enter a valid 4 Digit NRIC")
+    if nric == "":
+        update.message.reply_text("Sorry {}, please enter a valid 4 Digit NRIC".format(user))
     else:
-        for keys in list_of_nric.each():
-                if nric == keys.key():
-                    final_output = ""
-                    name = db.child("chms").child(teamId).child(nric).child("pinfo").child("name").get()
-                    equipping = db.child("chms").child(teamId).child(nric).child("estatus").get()
-                    final_output += "<b>{}</b>\n\n".format(name.val())
-                    for items in equipping.each():
-                        title = items.val()["title"]
-                        date = items.val()["date"]
-                        if "attendance" not in items.val():
-                            attendance = "NA"
-                        else:
-                            attendance = items.val()["attendance"]
-                        final_output += "<b>{}</b>\n\u2022{}\n\u2022{}\n\n".format(title, date, attendance)
-                    found_nric = True
-                    break
-        if found_nric:
-            # update.message.reply_text(final_output, parse_mode=telegram.ParseMode.MARKDOWN_V2)
-            print(final_output)
-            bot.send_message(chat_id=update.message.chat_id, text = final_output, parse_mode=telegram.ParseMode.HTML)
+        if nric in db.child("estatus").get().val():
+            final_output = ""
+            name = db.child("pinfo").child(nric).child("name").get()
+            equipping = db.child("estatus").child(nric).get()
+            final_output += "Hi {}, here is your equipping status: <b>{}</b>\n\n".format(user, name.val())
+            for items in equipping.each():
+                title = items.val()["title"]
+                date = items.val()["date"]
+                if "attendance" not in items.val():
+                    attendance = "NA"
+                else:
+                    attendance = items.val()["attendance"]
+                final_output += "<b>{}</b>\n\u2022{}\n\u2022{}\n\n".format(title, date, attendance)
+            bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
         else:
-            update.message.reply_text("User does not exist." + "\n" + "Kindly check the last 4 digits of your NRIC")
+            update.message.reply_text("Hi {}, we are unable to retrieve your equipping status, please contact the "
+                                      "admin for assistance.".format(user))
+
 
 @send_typing_action
 def getBirthdays(update, context):
-    # /birthdays
-    db = firebase.database()
-    teamId = context.chat_data['teamId']
-    get_IC = db.child("chms").child(teamId).get()
-    monthConversions = {
-        "01": "January",
-        "02": "February",
-        "03": "March",
-        "04": "April",
-        "05": "May",
-        "06": "June",
-        "07": "July",
-        "08": "August",
-        "09": "September",
-        "10": "October",
-        "11": "November",
-        "12": "December",
-    }
-    birthdays = {}
-    if teamId == "":
-        update.message.reply_text("Login unsuccessful." + "\n" + "Kindly Login to proceed" + "😔")
+    user = update.message.from_user.first_name
+    chatId = update.message.chat_id
+    final_output = "<b>List of birthdays:</b>\n"
+    icList = db.child("chat").child(chatId).get()
+    if icList.val() is None:
+        bot.send_message(chat_id=update.message.chat_id, text="Sorry {}, no birthday records has been added to this "
+                                                              "group chat".format(user))
     else:
-        for i in get_IC.each():
-            p_info = db.child("chms").child(teamId).child(i.key()).child("pinfo").get()
-            name = p_info.val()['name']
-            birthday = p_info.val()["dob"].replace("-", "")[4:]
-            birthdays[name] = birthday  # {gerald: 654837563, josh: 5454353}
+        birthdays = {}
+        for i in icList.each():
+            birthdays[i.val()['name']] = i.val()['birthday']
         birthday_sorted = {name: birthday for name, birthday in sorted(birthdays.items(), key=lambda item: item[1])}
-        output_2 = ""
-        for j in birthday_sorted:
-            month = birthday_sorted[j][0:2]
-            day = birthday_sorted[j][2:4]
-            name = j
-            if month[0] == "0":
-                month_nozero = month[1]
-            else:
-                month_nozero = month
-            now = datetime.datetime.now()
-            bday = datetime.date(now.year, int(month_nozero), int(day))
-            current_day = datetime.date.today()
-            current_month = datetime.datetime.now().month
-            till_bday = bday - current_day
-            if till_bday.days < 0:
-                output_1 = name
-            elif till_bday.days == 0:
-                output_1 = "Happy Birthday " + name + "!🥳🎂"
-            elif int(month_nozero) == current_month:
-                output_1 = name + " (" + str(till_bday.days) + " days left!)"
-            else:
-                output_1 = name
-            birthday_expression = day + " " + monthConversions[month]
-            output_2 += "<b>{}</b>\n{}\n\n".format(output_1, birthday_expression)
-        final_output = "List of Birthdays!🥳🎂" + "\n\n" + output_2
+        current_day = datetime.datetime.now().day
+        current_month = datetime.datetime.now().month
+        months_output = ""
+        for i in range(1, 13):
+            temp_month = monthConversions[i]
+            temp_month_output = ""
+            for birthday in birthday_sorted:
+                dmy = birthday_sorted[birthday].split("-")
+                day = int(dmy[0].lstrip('0'))
+                month = int(dmy[1])
+                get_month = monthConversions[month]  # Prints george
+                if get_month == temp_month and month == current_month:
+                    temp_month_output += "{} - {}".format(day, birthday)
+                    if day == current_day:
+                        temp_month_output += " 🎂\n"
+                    elif day - current_day > 0:
+                        temp_month_output += " ({} day(s) left!)\n".format(day - current_day)
+                    else:
+                        temp_month_output += "\n"
+                elif get_month == temp_month:
+                    temp_month_output += "{} - {}\n".format(day, birthday)
+            if temp_month_output != "":
+                temp_month_output = "\n<b>{}</b>\n".format(temp_month) + temp_month_output
+            months_output += temp_month_output
+        final_output += months_output
         bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
+
 
 @send_typing_action
 def thoughtOfTheWeek(update, context):
-    page = requests.get("https://fcbc.org.sg/celebration/our-thoughts-this-week")
+    page = requests.get(TOTW_URL)
     soup = BeautifulSoup(page.content, 'html.parser')
     header = soup.find_all('h1')[0].get_text()
     image = soup.find_all("img")
@@ -240,102 +183,41 @@ def thoughtOfTheWeek(update, context):
             name = src
     # get the source of the image
     url = "fcbc.org.sg" + name
-    #combining fcbc.org.sg to source of the image
     content = '<b>Thought of the week</b>\n\n<a href="{}">{}</a>{}'.format(url, header, content)
     bot.send_message(chat_id=update.message.chat_id,
                      text=content,
-                     parse_mode=telegram.ParseMode.HTML)    #must use update.message.chat_id to send picture using telegram bot
-
-@send_typing_action
-def verseOfTheDay(update, context):
-    page = requests.get("https://www.bible.com/verse-of-the-day")
-    soup = BeautifulSoup(page.content, 'html.parser')
-    verse = soup.find(class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text()
-    verse_query = re.findall('(.+) ', verse)[0]
-    scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', verse_query)[0])
-    scriptures = list(filter(lambda a: a != '', scriptures))
-    book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
-    bible_query = ""
-    # passage
-    if len(scriptures) == 4:
-        bible_query = "{}.{}.{}-{}.{}.{}".format(book_id, scriptures[1], scriptures[2], book_id, scriptures[1],
-                                                 scriptures[3])
-    # verse
-    elif len(scriptures) == 3:
-        bible_query = "{}.{}.{}".format(book_id, scriptures[1], scriptures[2])
-    elif len(scriptures) == 2:
-        bible_query = "{}.{}".format(book_id, scriptures[1])
-    content_output = apiBible(bible_query)
-    verse_output = "<b>Verse of the Day</b>" + "\n\n" + content_output
-    bot.send_message(chat_id=update.message.chat_id,
-                     text=verse_output,
                      parse_mode=telegram.ParseMode.HTML)
 
-
-def apiBible(query):
-    response = requests.get(
-        'https://api.scripture.api.bible/v1/bibles/78a9f6124f344018-01/passages/{'
-        '}?content-type=json&include-notes=false&include-titles=true&include-chapter-numbers=false&include-verse'
-        '-numbers=true&include-verse-spans=false&use-org-id=false'.format(
-            query),
-        headers={'api-key': '643c03c56dfaef821ef0247f1aa2dde0'})
-    json_response = response.json()
-    if 'statusCode' in json_response and json_response['statusCode'] == 404:
-        return False
-    contents = json_response['data']['content']
-    reference = json_response['data']['reference']
-    content_output = "<b>{} (NIV)</b>\n\n".format(reference)
-    for content in contents:
-        if content['attrs']['style'] == 's1' or content['attrs']['style'] == 'ms' or content['attrs'][
-            'style'] == 'mr' or content['attrs']['style'] == 'cl' or content['attrs']['style'] == 'd' or \
-                content['attrs']['style'] == 'sp':
-            if len(content['items']) != 0:
-                content_output += "\n<b>{}</b>\n\n".format(content['items'][0]['text'])
-        elif content['attrs']['style'] == 'b':
-            pass
-        elif content['attrs']['style'] == 'p' or content['attrs']['style'] == 'q1' or content['attrs']['style'] == 'q2':
-            for item in content['items']:
-                if 'style' in item['attrs']:
-                    if item['attrs']['style'] == 'v':
-                        content_output += item['attrs']['number'].translate(trans)
-                    elif item['attrs']['style'] == 'wj' or item['attrs']['style'] == 'nd':
-                        content_output += item['items'][0]['text']
-                elif 'text' in item:
-                    content_output += item['text']
-            content_output += additional_output(content['attrs']['style'])
-    temp_content_output = content_output.split('\n')
-    cleaned_content_output = "\n".join(
-        [v for i, v in enumerate(temp_content_output) if i == 0 or v != temp_content_output[i - 1]])
-    return cleaned_content_output
 
 @send_typing_action
 def getTopSongs(update, context):
     message = update.message.text
+    user = update.message.from_user.first_name
     query = " ".join(message.split()[1:])
-    # clear chat lyrics data
     context.chat_data['lyrics_data'] = {}
-    # query = 'marry'
-    search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query), headers={"User-Agent": "Mozilla/5.0"})
-    soup = BeautifulSoup(search_page.content, 'html.parser')
+    url = 'https://www.musixmatch.com/search/{}/tracks'.format(query)
+    headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0'}
+
+    soup = BeautifulSoup(requests.get(url, headers=headers).content, 'html.parser')
+
     if soup.find(class_="empty"):
         bot.send_message(chat_id=update.message.chat_id,
-                         text="Sorry {}, we couldn't find what you were looking for.".format(user.first_name))
+                         text="Sorry {}, we couldn't find what you were looking for.".format(user))
         return
-    top_tracks = soup.find_all(class_="showArtist showCoverart", limit = 5)
+
     output_top_tracks = "<b>Top search results on {}:</b>\n\n".format(query)
-    for track in top_tracks:
-        title = track.find("a", class_="title").get_text()
-        artist = track.find("a", class_="artist").get_text()
-        href = track.find("a", href=True)['href']
-        # print(href)
+    for t, s in list(zip(soup.select('.media-card-title'), soup.select('.media-card-subtitle')))[:5]:
+        title = t.text
+        artist = s.text
+        href = t.a['href']
         uuid = str(uuid4()).upper()[:4]
-        output_top_tracks = output_top_tracks + "💿 " + title + "\n" + "🎤 " + artist + "\n" + "/lyric3" + uuid  + "\n\n"
+        output_top_tracks = output_top_tracks + "💿 " + title + "\n" + "🎤 " + artist + "\n" + "/lyric3" + uuid + "\n\n"
         # store in temp db
         context.chat_data['lyrics_data']["lyric3" + uuid] = {'title': title, 'artist': artist, 'href': href}
-    # print(output_top_tracks)
     bot.send_message(chat_id=update.message.chat_id,
                      text=output_top_tracks,
                      parse_mode=telegram.ParseMode.HTML)
+
 
 @send_typing_action
 def getSongLyrics(update, context):
@@ -348,7 +230,8 @@ def getSongLyrics(update, context):
     soup = BeautifulSoup(search_page.content, 'html.parser')
 
     if soup.find(class_="empty"):
-        bot.send_message(chat_id=update.message.chat_id, text="Sorry {}, we couldn't find what you were looking for.".format(user.first_name))
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Sorry {}, we couldn't find what you were looking for.".format(user.first_name))
         return
     best_result = soup.find(class_="showArtist showCoverart")
     song_title = best_result.find("a", class_="title").get_text()
@@ -363,14 +246,14 @@ def getSongLyrics(update, context):
         lyrics_output = lyrics_output + lyrics.get_text() + "\n"
     bot.send_message(chat_id=update.message.chat_id, text=lyrics_output, parse_mode=telegram.ParseMode.HTML)
 
+
 @send_typing_action
 def scrapeLyrics(update, context):
     message = update.message.text
     query = message[1:]
-    print(query)
     song_info = context.chat_data['lyrics_data'].get(query, False)
-    print(song_info)
-    lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_info['href']), headers={"User-Agent": "Mozilla/5.0"})
+    lyrics_page = requests.get("https://www.musixmatch.com{}".format(song_info['href']),
+                               headers={"User-Agent": "Mozilla/5.0"})
     soup = BeautifulSoup(lyrics_page.content, 'html.parser')
     lyrics_content = soup.find_all(class_="mxm-lyrics__content")
     lyrics_output = "{} by {} 🎵\n\n".format(song_info['title'], song_info['artist'])
@@ -378,52 +261,173 @@ def scrapeLyrics(update, context):
         lyrics_output = lyrics_output + lyrics.get_text() + "\n"
     update.message.reply_text(lyrics_output)
 
+
+@send_typing_action
+def verseOfTheDay(update, context):
+    user = update.message.from_user
+    page = requests.get(VOTD_URL)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    verse = soup.find(class_="usfm fw7 mt0 mb0 gray f7 ttu").get_text()
+    verse_query = re.findall('(.+) ', verse)[0]
+    # print(verse_query)
+    returned_output = formatQuery(verse_query)
+    if returned_output == -1 or returned_output is None:
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Sorry {}, something is wrong, please contact the admin".format(user.first_name))
+        return
+    verse_output = "<b>Verse of the Day</b>" + "\n\n" + returned_output
+    # print(verse_output)
+    bot.send_message(chat_id=update.message.chat_id,
+                     text=verse_output,
+                     parse_mode=telegram.ParseMode.HTML)
+
+
 @send_typing_action
 def getBibleVerses(update, context):
+    # chapter - https://www.biblestudytools.com/psalms/1.html ([\w\s]+[a-z])\W(\d+)
+    # single verse - https://www.biblestudytools.com/psalms/1-1.html ([\w\s]+[a-z])\W(\d+)\W(\d+)
+    # passage - https://www.biblestudytools.com/psalms/passage/?q=psalm+1:1-4 ([\w\s]+[a-z])\W(\d+)\W(\d+)\W(\d+)
     message = update.message.text
     user = update.message.from_user
-    query = message.split(" ", 1)[1]
-    scriptures = list(re.findall('([\w\s]+[a-z])\W?(\d+)\W?(\d*)\W?(\d*)', query)[0])
-    scriptures = list(filter(lambda a: a != '', scriptures))
-    book_id = [key for key, value in abbreviation.book_ids.items() if scriptures[0].lower() in value][0]
-    bible_query = ""
-    # passage
-    if len(scriptures) == 4:
-        bible_query = "{}.{}.{}-{}.{}.{}".format(book_id, scriptures[1], scriptures[2], book_id, scriptures[1],
-                                                 scriptures[3])
-    # verse
-    elif len(scriptures) == 3:
-        bible_query = "{}.{}.{}".format(book_id, scriptures[1], scriptures[2])
-    elif len(scriptures) == 2:
-        bible_query = "{}.{}".format(book_id, scriptures[1])
-    content_output = apiBible(bible_query)
-    if content_output is False:
-        bot.send_message(chat_id=update.message.chat_id,
-                         text="Sorry {}, we cannot find what you're looking for.".format(user.first_name))
+    query = " ".join(message.split()[1:])
+    if query == "":
+        update.message.reply_text("Sorry {}, please enter a bible verse or passage".format(user.first_name))
     else:
-        bot.send_message(chat_id=update.message.chat_id,
-                        text=content_output,
-                        parse_mode=telegram.ParseMode.HTML)
+        returned_output = formatQuery(query)
+        if returned_output == -1:
+            bot.send_message(chat_id=update.message.chat_id,
+                             text="Sorry {}, I have detected an incorrect passage format, here are a few "
+                                  "examples:\n\n\u2022john "
+                                  "3:16\n\u2022jeremiah 29 11\n\u20221 cor 13:4-13".format(user.first_name))
+            return
+        elif returned_output is None:
+            bot.send_message(chat_id=update.message.chat_id,
+                             text="Sorry {}, we couldn't find what you were looking for".format(user.first_name),
+                             parse_mode=telegram.ParseMode.HTML)
+            return
+        content_output_1, content_output_2 = checkMaximumLength(returned_output)
+        if content_output_2 == "":
+            bot.send_message(chat_id=update.message.chat_id,
+                             text=content_output_1,
+                             parse_mode=telegram.ParseMode.HTML)
+        else:
+            content_list = [content_output_1, content_output_2]
+            for i in content_list:
+                bot.send_message(chat_id=update.message.chat_id,
+                                 text=i,
+                                 parse_mode=telegram.ParseMode.HTML)
 
 
-def additional_output(style):
-    if style == 'p':
-        return  '\n\n'
-    if style == 'q1':
-        return '\n '
-    if style == 'q2':
-        return '\n'
+def apiBible(query):
+    output = ""
+    search_page = requests.get(query, headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(search_page.content, 'html.parser')
+    content = soup.find(class_='scripture verse-padding')
+    if content == None:
+        return None
+    title = soup.find('h1')
+    output += "<b>{} (NIV)</b>".format(title.text)
+    content = soup.find(class_='scripture verse-padding')
+    verse_content = content.find_all(re.compile('h2|div'))
+    for idx, obj in enumerate(verse_content):
+        obj_name = obj.name
+        if obj_name == 'h2':
+            if verse_content[idx - 1].name != 'h2':
+                output += "\n\n"
+            output += '<b>{}</b>\n\n'.format(obj.text.strip())
+        elif obj_name == 'div':
+            unwanted = obj.find('a')
+            if unwanted != None:
+                unwanted.extract()
+            verse_num_obj = obj.find('span', class_='verse-number')
+            verse_num = verse_num_obj.getText().strip()
+            verse_obj = obj.find('span', class_=re.compile('verse-{}'.format(verse_num)))
+            verse = verse_obj.getText().strip()
+            if verse_content[idx - 1].name != 'h2':
+                if idx == 0:
+                    output += "\n\n"
+                else:
+                    output += " "
+            output += '{}'.format(verse_num.translate(trans))
+            output += verse
+    return output
+
+
+def formatQuery(query):
+    if re.search(queries_regex['book'], query) is not None:
+        query_content = re.findall(queries_regex['book'], query)[0]
+        return apiBible(
+            "https://www.biblestudytools.com/{}/{}.html".format(query_content[0], query_content[1]))
+    elif re.search(queries_regex['verse'], query) is not None:
+        query_content = re.findall(queries_regex['verse'], query)[0]
+        return apiBible(
+            "https://www.biblestudytools.com/{}/{}-{}.html".format(query_content[0], query_content[1],
+                                                                   query_content[2]))
+    elif re.search(queries_regex['passage'], query) is not None:
+        query_content = re.findall(queries_regex['passage'], query)[0]
+        return apiBible(
+            "https://www.biblestudytools.com/{}/passage/?q={}+{}:{}-{}".format(query_content[0], query_content[0],
+                                                                               query_content[1], query_content[2],
+                                                                               query_content[3]))
+    else:
+        return -1
+
+
+def checkMaximumLength(content_output):
+    content_output_overflow = ""
+    if len(content_output) > 4096:
+        content_output_1, content_output_overflow = content_output[:4096], content_output[4096:]
+        return content_output_1, content_output_overflow
+    else:
+        return content_output, content_output_overflow
 
 
 @send_typing_action
 def get4ws(update, context):
-    page = requests.get("https://www.fcbc.org.sg/pastoral-care/4ws-for-cell-groups")
+    page = requests.get(CELL_WORD_URL)
     soup = BeautifulSoup(page.content, 'html.parser')
     pdfs = soup.find(class_="views-field views-field-field-pdfs")
     href = pdfs.find('a', href=True)['href']
     caption = "<b>4Ws For Cell Groups</b>\n\n" + pdfs.find('a', href=True).get_text()
     # document = open(href, 'rb')
     bot.sendDocument(chat_id=update.message.chat_id, document=href, caption=caption, parse_mode=telegram.ParseMode.HTML)
+
+
+@send_typing_action
+def addBirthdayReminder(update, context):
+    user = update.message.from_user
+    message = update.message.text
+    chatId = update.message.chat_id
+    birthday = " ".join(message.split()[1:]).upper()
+    # check for birthday format
+    searchResult = re.search("^(\d{2})\W?(\d{2})\W(\d{4})$", birthday)
+    if searchResult is None:
+        update.message.reply_text(
+            "Sorry {}, I have detected an incorrect date format, please enter like this: dd-mm-yyyy".format(
+                user.first_name))
+    else:
+        # add to chat node
+        chat_details = {'name': user.first_name, 'birthday': birthday, 'userId': user.id, 'chatId': chatId}
+        db.child("chat").child(chatId).child(user.id).set(chat_details)
+        # add to reminder node
+        birthday_details = {'name': user.first_name, 'birthday': birthday, 'userId': user.id, 'chatIds': [chatId]}
+        dbPath = db.child("reminder").child(user.id).get().val()
+        if dbPath is None:
+            db.child("reminder").child(user.id).set(birthday_details)
+            update.message.reply_text("Thank you {}, your record has been saved".format(user.first_name))
+        elif birthday != dbPath['birthday']:
+            db.child("reminder").child(user.id).set(birthday_details)
+            update.message.reply_text("Hi {}, your birthday record is sucessfully changed".format(user.first_name))
+        else:
+            userDetails = db.child("reminder").child(user.id).get().val()
+            if chatId not in userDetails['chatIds']:
+                updatedIds = userDetails['chatIds']
+                updatedIds.append(chatId)
+                birthday_details['chatIds'] = updatedIds
+                db.child("reminder").child(user.id).update(birthday_details)
+                update.message.reply_text("Thank you {}, your record has been saved".format(user.first_name))
+            else:
+                update.message.reply_text("Hi {}, your record is already saved".format(user.first_name))
 
 @send_typing_action
 def getSermons(update, context):
@@ -443,8 +447,64 @@ def getSermons(update, context):
     bot.send_message(chat_id=update.message.chat_id, text=f_output, parse_mode=telegram.ParseMode.HTML)
 
 
+@send_typing_action
+def listOfCommands(update, context):
+    bot.send_message(chat_id=update.message.chat_id, text="in progress")
+
+
+@send_typing_action
+def unknownCommand(update, context):
+    user = update.message.from_user
+    bot.send_message(chat_id=update.message.chat_id,
+                     text="Sorry {}, this is an invalid command, click /list to see all available commands".format(
+                         user.first_name))
+
+
+@send_typing_action
+def specialMessage(update, context):
+    message = update.message.text
+    user = update.message.from_user
+    name = " ".join(message.split()[1:]).lower()
+    if name == "":
+        bot.send_message(chat_id=update.message.chat_id,
+                         text="Sorry {}, please input a name".format(user.first_name))
+    else:
+        nameModified = name.strip().lower()
+        teleid = [key for key, value in developers.items() if nameModified in value]
+        if teleid == []:
+            message = [key for key, value in special_messages.items() if nameModified in value]
+            if message == []:
+                bot.send_message(chat_id=update.message.chat_id,
+                                 text="Hello {}, thank you for using FCBC Telegram Bot".format(name))
+            else:
+                bot.send_message(chat_id=update.message.chat_id,
+                                 text=message[0])
+        else:
+            bot.send_message(chat_id=update.message.chat_id,
+                             text="{} is a developer and admin of FCBC Telegram Bot. Contact {} to find out more".format(
+                                 name.capitalize(), teleid[0]))
+
+
+@send_typing_action
+def listOfCommands(update, context):
+    bot.send_message(chat_id=update.message.chat_id,
+                     text="1️⃣ /pinfo <Last 4 digits of NRIC>\nRetrieves your personal information\n\n"
+                          "2️⃣ /estatus <Last 4 digits of NRIC>\nRetrieves your equipping status\n\n"
+                          "3️⃣ /totw\nRetireves the thought of the week by FCBC\n\n"
+                          "4️⃣ /votd\nRetrieves the verse of the day by YouVersion\n\n"
+                          "5️⃣ /lyrics <Song title/artist>\nRetrieves the lyrics the top search result for the song title or artist input\n\n"
+                          "6️⃣ /songs <Song title/artist>\nRetrieves the top 5 search results for the song title or artist input\n\n"
+                          "7️⃣ /get <Bible verse/passage>\nRetrieves bible verse or passage in NIV\n\n"
+                          "8️⃣ /4ws\nRetrieves the latest 4Ws for cell leaders\n\n"
+                          "9️⃣ /birthdays\nRetrieves all users' birthday in the group chat\n\n"
+                          "1️⃣0️⃣ /remind <dd-mm-yyyy>\nAdd user's birthday to the group chat\n\n"
+                          "1️⃣1️⃣ /sermons\nRetrieves latest sermon video links\n\n"
+                          "1️⃣2️⃣ /list\nRetrieves a list of all acceptable commands\n\n"
+                          "😉 /fcbc <name>\nEnter your name for a special message from the administrators")
+
+
 def main():
-    updater = Updater(API_KEY, use_context=True)
+    updater = Updater(BOT_TOKEN, use_context=True)
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -452,7 +512,6 @@ def main():
     dp.add_handler(CommandHandler('start', start))
     dp.add_handler(CommandHandler('pinfo', getpinfo))
     dp.add_handler(CommandHandler('estatus', estatus))
-    dp.add_handler((CommandHandler('login', loginChms)))
     dp.add_handler((CommandHandler('totw', thoughtOfTheWeek)))
     dp.add_handler((CommandHandler('votd', verseOfTheDay)))
     dp.add_handler((CommandHandler('songs', getTopSongs)))
@@ -461,30 +520,24 @@ def main():
     dp.add_handler((CommandHandler('get', getBibleVerses)))
     dp.add_handler((CommandHandler('4ws', get4ws)))
     dp.add_handler((CommandHandler('birthdays', getBirthdays)))
+    dp.add_handler((CommandHandler('list', listOfCommands)))
+    dp.add_handler((CommandHandler('remind', addBirthdayReminder)))
+    dp.add_handler((CommandHandler('fcbc', specialMessage)))
+    dp.add_handler((CommandHandler('list', listOfCommands)))
     dp.add_handler((CommandHandler('sermons', getSermons)))
+    dp.add_handler((MessageHandler(Filters.command, unknownCommand)))
     # Start the Bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # updater.start_webhook(listen="0.0.0.0",
+    #                       port=PORT,
+    #                       url_path=BOT_TOKEN)
+    # updater.bot.set_webhook("https://fcbctelebot.herokuapp.com/" + BOT_TOKEN)
+    # Run the bot until you press Ctrl-C or the process rec eives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
 
+
 if __name__ == '__main__':
     main()
-
-
-    #commands
-    # pinfo - retreives your personal information
-    # estatus - retreives your equipping status
-    # totw - thought of the week
-    # votd - verse of the day
-    # lyrics - retrieves lyrics of a song
-    # songs - retrieves top songs of an artist
-    # get - retrieves bible verse or passage
-    # 4ws - retrieves 4Ws for cell group
-
-
-
-
-

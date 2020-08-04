@@ -432,17 +432,14 @@ def getSermons(update, context):
     link = soup.find(class_="views-row views-row-1 views-row-odd views-row-first views-row-last")
     title = link.findAll('td', {'valign': 'top'})  # change link to soup to get all
     output = ""
-    f_output = ""
     for i in title[0:15]:
         extract = i.findAll("a", href=True)
         text = i.text
-        output += text + "\n"
+        output += "\n" + text
         for z in extract:
             if "mp4" in z.get("href"):
-                output += "Video:" + z.get("href") + "\n\n"
-            else:
-                output += "Audio:" + z.get("href") + "\n"
-    f_output = "English Sermons ✝️" + "\n\n"+ output
+                output += "Video:" + z.get("href") + "\n"
+    f_output = "English Sermons ✝️" + "\n" + output
     bot.send_message(chat_id=update.message.chat_id, text=f_output, parse_mode=telegram.ParseMode.HTML)
 
 
@@ -486,8 +483,6 @@ if __name__ == '__main__':
     # songs - retrieves top songs of an artist
     # get - retrieves bible verse or passage
     # 4ws - retrieves 4Ws for cell group
-
-
 
 
 

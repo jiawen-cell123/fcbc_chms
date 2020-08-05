@@ -7,9 +7,9 @@ from bs4 import BeautifulSoup
 import requests
 from uuid import uuid4
 import re
-import os
 import datetime
-import html2text
+import pyshorteners
+
 
 # environmental variables
 BOT_TOKEN = "1232203331:AAGRJxNgfTclfie4UQlglsofl2uzBR00-TY"
@@ -31,7 +31,7 @@ config = {
 firebase = pyrebase.initialize_app(config)
 bot = telegram.Bot(token=BOT_TOKEN)
 db = firebase.database()
-h = html2text.HTML2Text()
+pyshort = pyshorteners.Shortener()
 
 # constants
 TOTW_URL = "https://fcbc.org.sg/celebration/our-thoughts-this-week"
@@ -48,9 +48,6 @@ queries_regex = {'book': '^([\w\s]+[a-z])\W(\d+)$', 'verse': '^([\w\s]+[a-z])\W(
 monthConversions = {1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
                     7: "July", 8: "August", 9: "September", 10: "October", 11: "November",
                     12: "December"}
-developers = {'@jiawenlor': ['jiawen', 'jw'], '@Geraldlim95': ['gerald'], '@tehontherocks': ['amadaues', 'ama'],
-              '@happpyfuntimess': ['joshua', 'josh'], '@zx0123': ['zhixin']}
-special_messages = {"testtest": ["test", "test1", "test2"]}
 
 
 def send_typing_action(func):
@@ -69,7 +66,7 @@ def start(update, context):
     bot.send_photo(chat_id=update.message.chat_id, photo=open('background.jpg', 'rb'),
                    caption="Hello {}, welcome to FCBC Telebot✌️. I can do a few things: \n\n😇 /get <bible passage> "
                            "\n🎵 /lyrics <song title> \n🎶 /songs <song artist> \n💌 /votd \n💭 /totw "
-                           "\n\nPress /list to see the full list of commands.".format(
+                           "\n\n📋 Press /list to see the full list of commands.\n\nℹ️ Press /about to know more about this bot.".format(
                        update.message.from_user.first_name))
 
 
@@ -400,7 +397,7 @@ def addBirthdayReminder(update, context):
     chatId = update.message.chat_id
     birthday = " ".join(message.split()[1:]).upper()
     # check for birthday format
-    searchResult = re.search("^(\d{2})\W?(\d{2})\W(\d{4})$", birthday)
+    searchResult = re.search("^(\d{2})-(\d{2})-(\d{4})$", birthday)
     if searchResult is None:
         update.message.reply_text(
             "Sorry {}, I have detected an incorrect date format, please enter like this: dd-mm-yyyy".format(
@@ -434,16 +431,21 @@ def getSermons(update, context):
     page = requests.get("https://fcbc.org.sg/celebration/media-downloads")
     soup = BeautifulSoup(page.content, 'html.parser')
     link = soup.find(class_="views-row views-row-1 views-row-odd views-row-first views-row-last")
-    title = link.findAll('td', {'valign': 'top'})  # change link to soup to get all
+    title = link.findAll('td', {'valign': 'top'}, limit=15)  # change link to soup to get all
+    composite_list = [title[x:x + 5] for x in range(0, len(title), 5)]
     output = ""
-    for i in title[0:15]:
-        extract = i.findAll("a", href=True)
-        text = i.text
-        output += "\n" + text
-        for z in extract:
-            if "mp4" in z.get("href"):
-                output += "Video:" + z.get("href") + "\n"
-    f_output = "English Sermons ✝️" + "\n" + output
+    for item in composite_list:
+        for i, o in enumerate(item):
+            if i == 0:
+                output += "\n📅" + o.text
+            elif i == 1:
+                output += "\n📖" + o.text
+            elif i == 2:
+                output += "\n👔" + o.text
+            elif i == 4:
+                link = re.findall("<a href=\"(.+)\">", str(o))
+                output += "\n📹" + pyshort.tinyurl.short(str(link[0])) + "\n\n"
+    f_output = "<b>English Sermons</b> ✝️" + "\n" + output
     bot.send_message(chat_id=update.message.chat_id, text=f_output, parse_mode=telegram.ParseMode.HTML)
 
 
@@ -469,21 +471,25 @@ def specialMessage(update, context):
         bot.send_message(chat_id=update.message.chat_id,
                          text="Sorry {}, please input a name".format(user.first_name))
     else:
-        nameModified = name.strip().lower()
-        teleid = [key for key, value in developers.items() if nameModified in value]
-        if teleid == []:
-            message = [key for key, value in special_messages.items() if nameModified in value]
-            if message == []:
-                bot.send_message(chat_id=update.message.chat_id,
-                                 text="Hello {}, thank you for using FCBC Telegram Bot".format(name))
-            else:
-                bot.send_message(chat_id=update.message.chat_id,
-                                 text=message[0])
-        else:
-            bot.send_message(chat_id=update.message.chat_id,
-                             text="{} is a developer and admin of FCBC Telegram Bot. Contact {} to find out more".format(
-                                 name.capitalize(), teleid[0]))
+        message = db.child('reminder').child(user.id).child('message').get().val()
+        if message == None:
+            message = "Have a good day {}!".format(user.first_name)
+        bot.send_message(chat_id=update.message.chat_id,
+                         text=message)
 
+@send_typing_action
+def about(update, context):
+    bot.send_photo(chat_id=update.message.chat_id, photo=open('aboutus.jpg', 'rb'),
+                   caption="FCBC Telebot was created to provide quick access to cell group essentials such as looking "
+                           "up bible verses, search for worship song lyrics, reminder for birthdays and more!\n\n"
+                           "Meet the creators of FCBC Telebot: "
+                           "👨 <b>Jiawen</b> (@jiawenlor)\n💼 Biz Whiz at SMU\n\n"
+                           "👩 <b>Zhi Xin</b> (@zx0123)\n💻 Programmer at NYP\n\n"
+                           "👨 Joshua (@happpyfuntimess)\n💡 Electronics guy at ITE East\n\n"
+                           "👨 Amadaeus (@tehontherocks)\n🛠️ Engineer at SP\n\n"
+                           "👨  Gerald (@Geraldlim95)\n🤓 Hardcore nerd at SUTD\n\n"
+                           "If you have any feedback or suggestion, please feel free to pm any of us!",
+                            parse_mode=telegram.ParseMode.HTML)
 
 @send_typing_action
 def listOfCommands(update, context):
@@ -500,6 +506,7 @@ def listOfCommands(update, context):
                           "1️⃣0️⃣ /remind <dd-mm-yyyy>\nAdd user's birthday to the group chat\n\n"
                           "1️⃣1️⃣ /sermons\nRetrieves latest sermon video links\n\n"
                           "1️⃣2️⃣ /list\nRetrieves a list of all acceptable commands\n\n"
+                          "ℹ️ /about Information about FCBC Telebot"
                           "😉 /fcbc <name>\nEnter your name for a special message from the administrators")
 
 
@@ -525,6 +532,7 @@ def main():
     dp.add_handler((CommandHandler('fcbc', specialMessage)))
     dp.add_handler((CommandHandler('list', listOfCommands)))
     dp.add_handler((CommandHandler('sermons', getSermons)))
+    dp.add_handler((CommandHandler('about', about)))
     dp.add_handler((MessageHandler(Filters.command, unknownCommand)))
     # Start the Bot
     updater.start_polling()
@@ -541,3 +549,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+#     message = db.child('reminder').child("260677589").child('message').get().val()
+#     print(message)

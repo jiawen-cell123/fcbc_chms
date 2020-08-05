@@ -8,7 +8,9 @@ import requests
 from uuid import uuid4
 import re
 import datetime
-import pyshorteners
+# import pyshorteners
+from pyshorteners import Shortener
+
 
 
 # environmental variables
@@ -31,7 +33,8 @@ config = {
 firebase = pyrebase.initialize_app(config)
 bot = telegram.Bot(token=BOT_TOKEN)
 db = firebase.database()
-pyshort = pyshorteners.Shortener()
+# pyshort = pyshorteners.Shortener()
+shortener = Shortener('Tinyurl')
 
 # constants
 TOTW_URL = "https://fcbc.org.sg/celebration/our-thoughts-this-week"
@@ -83,14 +86,11 @@ def getpinfo(update, context):
             address = p_info.val()["address"]
             dob = p_info.val()["dob"]
             name = p_info.val()["name"]
-            final_output = "Hi {}, here is your personal information: \n\n<b>{}</b>\n\u2022{}\n\u2022{}".format(user,
-                                                                                                                name,
-                                                                                                                dob,
-                                                                                                                address)
+            final_output = "Hi {}, here is your personal information: \n\n✝️ {}\n🎂 {}\n🏠 {}".format(user,name,dob,address)
             bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
         else:
             update.message.reply_text("Hi {}, we are unable to retrieve your equipping status, please contact the "
-                                      "admin for assistance.")
+                                      "admin for assistance.".format(user))
 
 
 @send_typing_action
@@ -105,7 +105,7 @@ def estatus(update, context):
             final_output = ""
             name = db.child("pinfo").child(nric).child("name").get()
             equipping = db.child("estatus").child(nric).get()
-            final_output += "Hi {}, here is your equipping status: <b>{}</b>\n\n".format(user, name.val())
+            final_output += "Hi {}, here is your equipping status: \n\n".format(user)
             for items in equipping.each():
                 title = items.val()["title"]
                 date = items.val()["date"]
@@ -113,7 +113,13 @@ def estatus(update, context):
                     attendance = "NA"
                 else:
                     attendance = items.val()["attendance"]
-                final_output += "<b>{}</b>\n\u2022{}\n\u2022{}\n\n".format(title, date, attendance)
+                    if attendance != '100.00%':
+                        attendance = '❌ '
+                    else:
+                        attendance = '✅ '
+                    attendance += items.val()["attendance"]
+
+                final_output += "<b>{}</b>\n📅 {}\n{}\n\n".format(title, date, attendance)
             bot.send_message(chat_id=update.message.chat_id, text=final_output, parse_mode=telegram.ParseMode.HTML)
         else:
             update.message.reply_text("Hi {}, we are unable to retrieve your equipping status, please contact the "
@@ -124,7 +130,7 @@ def estatus(update, context):
 def getBirthdays(update, context):
     user = update.message.from_user.first_name
     chatId = update.message.chat_id
-    final_output = "<b>List of birthdays:</b>\n"
+    final_output = "<b>List of birthdays 🎂</b>\n"
     icList = db.child("chat").child(chatId).get()
     if icList.val() is None:
         bot.send_message(chat_id=update.message.chat_id, text="Sorry {}, no birthday records has been added to this "
@@ -191,6 +197,8 @@ def getTopSongs(update, context):
     message = update.message.text
     user = update.message.from_user.first_name
     query = " ".join(message.split()[1:])
+    if query == "":
+        update.message.reply_text("Sorry {}, please enter a 🎶 title or an 👨‍🎤 name".format(user))
     context.chat_data['lyrics_data'] = {}
     url = 'https://www.musixmatch.com/search/{}/tracks'.format(query)
     headers = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0'}
@@ -221,6 +229,8 @@ def getSongLyrics(update, context):
     message = update.message.text
     user = update.message.from_user
     query = " ".join(message.split()[1:])
+    if query == "":
+        update.message.reply_text("Sorry {}, please enter a 🎶 title".format(user))
     # query = 'ride'
     search_page = requests.get("https://www.musixmatch.com/search/{}/tracks".format(query),
                                headers={"User-Agent": "Mozilla/5.0"})
@@ -272,7 +282,7 @@ def verseOfTheDay(update, context):
         bot.send_message(chat_id=update.message.chat_id,
                          text="Sorry {}, something is wrong, please contact the admin".format(user.first_name))
         return
-    verse_output = "<b>Verse of the Day</b>" + "\n\n" + returned_output
+    verse_output = "<b>Verse of the Day 📖</b>" + "\n\n" + returned_output
     # print(verse_output)
     bot.send_message(chat_id=update.message.chat_id,
                      text=verse_output,
@@ -353,20 +363,26 @@ def apiBible(query):
 def formatQuery(query):
     if re.search(queries_regex['book'], query) is not None:
         query_content = re.findall(queries_regex['book'], query)[0]
+        # print("https://www.biblestudytools.com/{}/{}.html".format(query_content[0].replace(" ", "-"), query_content[1]))
         return apiBible(
-            "https://www.biblestudytools.com/{}/{}.html".format(query_content[0], query_content[1]))
+            "https://www.biblestudytools.com/{}/{}.html".format(query_content[0].replace(" ", "-"), query_content[1]))
     elif re.search(queries_regex['verse'], query) is not None:
         query_content = re.findall(queries_regex['verse'], query)[0]
+        # print("https://www.biblestudytools.com/{}/{}-{}.html".format(query_content[0].replace(" ", "-"), query_content[1], query_content[2]))
         return apiBible(
-            "https://www.biblestudytools.com/{}/{}-{}.html".format(query_content[0], query_content[1],
+            "https://www.biblestudytools.com/{}/{}-{}.html".format(query_content[0].replace(" ", "-"), query_content[1],
                                                                    query_content[2]))
     elif re.search(queries_regex['passage'], query) is not None:
         query_content = re.findall(queries_regex['passage'], query)[0]
+        # print("https://www.biblestudytools.com/{}/passage/?q={}+{}:{}-{}".format(query_content[0].replace(" ", "-"), query_content[0],
+        #                                                                        query_content[1], query_content[2],
+        #                                                                        query_content[3]))
         return apiBible(
-            "https://www.biblestudytools.com/{}/passage/?q={}+{}:{}-{}".format(query_content[0], query_content[0],
+            "https://www.biblestudytools.com/{}/passage/?q={}+{}:{}-{}".format(query_content[0].replace(" ", "-"), query_content[0],
                                                                                query_content[1], query_content[2],
                                                                                query_content[3]))
     else:
+        # print(-1)
         return -1
 
 
@@ -400,7 +416,7 @@ def addBirthdayReminder(update, context):
     searchResult = re.search("^(\d{2})-(\d{2})-(\d{4})$", birthday)
     if searchResult is None:
         update.message.reply_text(
-            "Sorry {}, I have detected an incorrect date format, please enter like this: dd-mm-yyyy".format(
+            "Sorry {}, I have detected an incorrect date format, please enter like this: /remind <dd-mm-yyyy>".format(
                 user.first_name))
     else:
         # add to chat node
@@ -444,7 +460,7 @@ def getSermons(update, context):
                 output += "\n👔" + o.text
             elif i == 4:
                 link = re.findall("<a href=\"(.+)\">", str(o))
-                output += "\n📹" + pyshort.tinyurl.short(str(link[0])) + "\n\n"
+                output += "\n📹" + shortener.short(str(link[0])) + "\n\n"
     f_output = "<b>English Sermons</b> ✝️" + "\n" + output
     bot.send_message(chat_id=update.message.chat_id, text=f_output, parse_mode=telegram.ParseMode.HTML)
 
@@ -482,10 +498,10 @@ def about(update, context):
     bot.send_photo(chat_id=update.message.chat_id, photo=open('aboutus.jpg', 'rb'),
                    caption="FCBC Telebot was created to provide quick access to cell group essentials such as looking "
                            "up bible verses, search for worship song lyrics, reminder for birthdays and more!\n\n"
-                           "Meet the creators of FCBC Telebot: "
+                           "Meet the creators of FCBC Telebot: \n"
                            "👨 <b>Jiawen</b> (@jiawenlor)\n💼 Biz Whiz at SMU\n\n"
                            "👩 <b>Zhi Xin</b> (@zx0123)\n💻 Programmer at NYP\n\n"
-                           "👨 Joshua (@happpyfuntimess)\n💡 Electronics guy at ITE East\n\n"
+                           "👨 <b>Joshua</b> (@happpyfuntimess)\n💡 Electronics guy at ITE East\n\n"
                            "👨 Amadaeus (@tehontherocks)\n🛠️ Engineer at SP\n\n"
                            "👨  Gerald (@Geraldlim95)\n🤓 Hardcore nerd at SUTD\n\n"
                            "If you have any feedback or suggestion, please feel free to pm any of us!",
@@ -506,7 +522,7 @@ def listOfCommands(update, context):
                           "1️⃣0️⃣ /remind <dd-mm-yyyy>\nAdd user's birthday to the group chat\n\n"
                           "1️⃣1️⃣ /sermons\nRetrieves latest sermon video links\n\n"
                           "1️⃣2️⃣ /list\nRetrieves a list of all acceptable commands\n\n"
-                          "ℹ️ /about Information about FCBC Telebot"
+                          "ℹ️ /about Information about FCBC Telebot\n\n"
                           "😉 /fcbc <name>\nEnter your name for a special message from the administrators")
 
 
@@ -549,5 +565,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-#     message = db.child('reminder').child("260677589").child('message').get().val()
-#     print(message)
+    # x = formatQuery("1 corinthians 2:2-5")
+    # print(x)
+
